@@ -1,5 +1,6 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, ErrorHandler, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { GlobalErrorHandler } from './core/error-handler';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 
 import { routes } from './app.routes';
@@ -16,5 +17,6 @@ export const appConfig: ApplicationConfig = {
     { provide: CONTACT_REPOSITORY, useClass: HttpContactRepository },
     { provide: CAMPAIGN_REPOSITORY, useClass: HttpCampaignRepository },
     { provide: SEGMENT_REPOSITORY, useClass: HttpSegmentRepository },
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };

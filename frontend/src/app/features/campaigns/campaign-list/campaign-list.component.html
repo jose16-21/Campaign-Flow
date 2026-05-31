@@ -1,9 +1,12 @@
 <div class="page">
   <div class="page__header">
     <h1>Campañas</h1>
-    <button class="btn btn--primary" (click)="crear()">+ Nueva campaña</button>
+    <button class="btn btn--primary" (click)="abrirModal()">+ Nueva campaña</button>
   </div>
 
+  @if (exito()) {
+    <div class="alert alert--success">{{ exito() }}</div>
+  }
   @if (error()) {
     <div class="alert alert--error">{{ error() }}</div>
   }
@@ -49,3 +52,51 @@
     </div>
   }
 </div>
+
+<!-- Modal nueva campaña -->
+@if (mostrarModal()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>Nueva campaña</h2>
+        <button class="modal__close" (click)="cerrarModal()">✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="field">
+          <label class="field__label" for="camp-name">Nombre <span class="required">*</span></label>
+          <input
+            id="camp-name"
+            type="text"
+            class="field__input"
+            placeholder="Ej. Campaña de bienvenida"
+            [ngModel]="form().name"
+            (ngModelChange)="setNombre($event)"
+            (keydown.enter)="confirmarCrear()"
+            autofocus />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="camp-desc">Descripción</label>
+          <textarea
+            id="camp-desc"
+            class="field__input field__input--textarea"
+            placeholder="Descripción opcional de la campaña"
+            rows="3"
+            [ngModel]="form().description"
+            (ngModelChange)="setDescripcion($event)"></textarea>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn btn--ghost" (click)="cerrarModal()">Cancelar</button>
+        <button
+          class="btn btn--primary"
+          [disabled]="!form().name.trim() || guardando()"
+          (click)="confirmarCrear()">
+          {{ guardando() ? 'Creando...' : 'Crear campaña' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
