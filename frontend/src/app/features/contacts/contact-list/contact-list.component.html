@@ -1,0 +1,124 @@
+<div class="page">
+  <div class="page__header">
+    <h1>Contactos</h1>
+    <div class="page__header-actions">
+      <button
+        class="btn btn--outline"
+        (click)="mostrarFiltros.set(!mostrarFiltros())">
+        {{ mostrarFiltros() ? 'Ocultar filtros' : 'Filtros dinámicos' }}
+        @if (filtros().conditions.length > 0) {
+          <span class="badge-count">{{ filtros().conditions.length }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- Barra de búsqueda -->
+  <div class="search-bar">
+    <input
+      type="search"
+      class="search-bar__input"
+      placeholder="Buscar por nombre o email..."
+      [ngModel]="busqueda()"
+      (ngModelChange)="onBusqueda($event)" />
+    @if (resultado()) {
+      <span class="search-bar__count">
+        {{ resultado()!.total }} contacto(s)
+      </span>
+    }
+  </div>
+
+  <!-- Panel de filtros dinámicos -->
+  @if (mostrarFiltros()) {
+    <div class="filtros-panel">
+      <app-filter-builder
+        [grupo]="filtros()"
+        (grupoChange)="onFiltrosChange($event)" />
+      <div class="filtros-panel__actions">
+        <button class="btn btn--primary btn--sm" (click)="aplicarFiltros()">
+          Aplicar filtros
+        </button>
+        <button class="btn btn--ghost btn--sm" (click)="limpiarFiltros()">
+          Limpiar
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="alert alert--error">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="loading">Cargando...</div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>País</th>
+            <th>Ciudad</th>
+            <th>Estado</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of resultado()?.data ?? []; track c.id) {
+            <tr>
+              <td class="table__name">{{ c.first_name }} {{ c.last_name }}</td>
+              <td>{{ c.email }}</td>
+              <td>{{ c.country || '—' }}</td>
+              <td>{{ c.city || '—' }}</td>
+              <td>
+                <span class="badge" [class.badge--active]="c.status === 'ACTIVE'">
+                  {{ estadoLabel(c) }}
+                </span>
+              </td>
+              <td>{{ c.created_at | date:'dd/MM/yyyy' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="table__empty">
+                No se encontraron contactos con los criterios indicados.
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    @if (totalPaginas > 1) {
+      <div class="pagination">
+        <button
+          class="pagination__btn"
+          [disabled]="pagina() === 1"
+          (click)="irPagina(pagina() - 1)">
+          ‹
+        </button>
+
+        @for (p of paginas; track p) {
+          <button
+            class="pagination__btn"
+            [class.pagination__btn--active]="p === pagina()"
+            (click)="irPagina(p)">
+            {{ p }}
+          </button>
+        }
+
+        <button
+          class="pagination__btn"
+          [disabled]="pagina() === totalPaginas"
+          (click)="irPagina(pagina() + 1)">
+          ›
+        </button>
+
+        <span class="pagination__info">
+          Página {{ pagina() }} de {{ totalPaginas }}
+        </span>
+      </div>
+    }
+  }
+</div>
