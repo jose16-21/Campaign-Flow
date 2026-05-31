@@ -10,29 +10,32 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
-import { ContactsService } from './contacts.service';
+import { CreateContactUseCase } from './application/use-cases/create-contact.use-case';
+import { ListContactsUseCase } from './application/use-cases/list-contacts.use-case';
+import { UpdateContactUseCase } from './application/use-cases/update-contact.use-case';
+import { DeleteContactUseCase } from './application/use-cases/delete-contact.use-case';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { QueryContactDto } from './dto/query-contact.dto';
 
 @Controller('contacts')
 export class ContactsController {
-  constructor(private readonly contactsService: ContactsService) {}
+  constructor(
+    private readonly createUseCase: CreateContactUseCase,
+    private readonly listUseCase: ListContactsUseCase,
+    private readonly updateUseCase: UpdateContactUseCase,
+    private readonly deleteUseCase: DeleteContactUseCase,
+  ) {}
 
   @Post()
   @HttpCode(201)
   crear(@Body() dto: CreateContactDto) {
-    return this.contactsService.crear(dto);
+    return this.createUseCase.ejecutar(dto);
   }
 
   @Get()
   listar(@Query() query: QueryContactDto) {
-    return this.contactsService.listar(query);
-  }
-
-  @Get(':id')
-  obtener(@Param('id', ParseIntPipe) id: number) {
-    return this.contactsService.obtener(id);
+    return this.listUseCase.ejecutar(query);
   }
 
   @Put(':id')
@@ -40,12 +43,12 @@ export class ContactsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateContactDto,
   ) {
-    return this.contactsService.actualizar(id, dto);
+    return this.updateUseCase.ejecutar(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
   async eliminar(@Param('id', ParseIntPipe) id: number) {
-    await this.contactsService.eliminar(id);
+    await this.deleteUseCase.ejecutar(id);
   }
 }
