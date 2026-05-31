@@ -1,10 +1,17 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { PrismaModule } from './prisma/prisma.module';
+import { FilterEngineModule } from './filter-engine/filter-engine.module';
+import { ContactsModule } from './contacts/contacts.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { SegmentsModule } from './segments/segments.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    PrismaModule,
+    FilterEngineModule,
+    ContactsModule,
+    CampaignsModule,
+    SegmentsModule,
+  ],
 })
 export class AppModule {}
