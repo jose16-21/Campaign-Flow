@@ -1,13 +1,14 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ListCampaignsUseCase } from '../../../application/use-cases/campaigns/list-campaigns.use-case';
 import { CAMPAIGN_REPOSITORY } from '../../../infrastructure/tokens/repository.tokens';
 import type { Campaign } from '../../../domain/models/campaign.model';
 
 @Component({
   selector: 'app-campaign-list',
-  imports: [DatePipe],
+  imports: [DatePipe, FormsModule],
   templateUrl: './campaign-list.component.html',
   styleUrl: './campaign-list.component.scss',
 })
@@ -19,6 +20,11 @@ export class CampaignListComponent implements OnInit {
   readonly campanias = signal<Campaign[]>([]);
   readonly cargando = signal(false);
   readonly error = signal<string | null>(null);
+  readonly mostrarModal = signal(false);
+  readonly guardando = signal(false);
+  readonly exito = signal<string | null>(null);
+
+  readonly form = signal({ name: '', description: '' });
 
   async ngOnInit(): Promise<void> {
     await this.cargar();
@@ -36,12 +42,46 @@ export class CampaignListComponent implements OnInit {
     }
   }
 
-  async crear(): Promise<void> {
+  abrirModal(): void {
+    this.form.set({ name: '', description: '' });
+    this.error.set(null);
+    this.mostrarModal.set(true);
+  }
+
+  cerrarModal(): void {
+    this.mostrarModal.set(false);
+  }
+
+  setNombre(value: string): void {
+    this.form.update(f => ({ ...f, name: value }));
+  }
+
+  setDescripcion(value: string): void {
+    this.form.update(f => ({ ...f, description: value }));
+  }
+
+  async confirmarCrear(): Promise<void> {
+    const { name, description } = this.form();
+    if (!name.trim()) return;
+
+    this.guardando.set(true);
+    this.error.set(null);
     try {
-      const nueva = await this.repo.crear({ name: 'Nueva campaña' });
-      await this.router.navigate(['/campaigns', nueva.id]);
+      const nueva = await this.repo.crear({
+        name: name.trim(),
+        description: description.trim() || undefined,
+      });
+      this.mostrarModal.set(false);
+      this.exito.set(`Campaña "${nueva.name}" creada. Abriendo editor...`);
+      await this.cargar();
+      setTimeout(() => {
+        this.exito.set(null);
+        this.router.navigate(['/campaigns', nueva.id]);
+      }, 1500);
     } catch {
       this.error.set('Error al crear la campaña');
+    } finally {
+      this.guardando.set(false);
     }
   }
 

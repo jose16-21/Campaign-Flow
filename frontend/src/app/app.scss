@@ -32,6 +32,14 @@ body {
 }
 
 .main-content {
+  display: flex;
+  flex-direction: column;
   height: calc(100vh - 56px);
   overflow: hidden;
+
+  // El host del componente enrutado debe ocupar todo el espacio disponible
+  & > * {
+    flex: 1;
+    min-height: 0;
+  }
 }
