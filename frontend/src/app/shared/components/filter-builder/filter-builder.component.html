@@ -1,0 +1,54 @@
+<div class="grupo" [class.grupo--nested]="nivel() > 0">
+  <div class="grupo__header">
+    <button class="op-toggle" (click)="toggleOp()">{{ grupo().op }}</button>
+    <span class="grupo__label">{{ nivel() === 0 ? 'Filtro raíz' : 'Subgrupo' }}</span>
+    <div class="grupo__actions">
+      <button class="btn-link" (click)="agregarCondicion()">+ Condición</button>
+      <button class="btn-link" (click)="agregarGrupo()">+ Grupo</button>
+    </div>
+  </div>
+
+  <div class="grupo__conditions">
+    @for (nodo of grupo().conditions; track $index) {
+      <div class="condition-row">
+        @if (isGroup(nodo)) {
+          <app-filter-builder
+            [grupo]="asGroup(nodo)"
+            [nivel]="nivel() + 1"
+            (grupoChange)="actualizarSubgrupo($index, $event)"
+          />
+        } @else {
+          <div class="condition">
+            <select
+              [ngModel]="asCondition(nodo).field"
+              (ngModelChange)="actualizarCondicion($index, 'field', $event)">
+              @for (campo of campos; track campo.value) {
+                <option [value]="campo.value">{{ campo.label }}</option>
+              }
+            </select>
+
+            <select
+              [ngModel]="asCondition(nodo).operator"
+              (ngModelChange)="actualizarCondicion($index, 'operator', $event)">
+              @for (op of operadores; track op) {
+                <option [value]="op">{{ operadorLabels[op] }}</option>
+              }
+            </select>
+
+            <input
+              type="text"
+              placeholder="Valor"
+              [ngModel]="asCondition(nodo).value"
+              (ngModelChange)="actualizarCondicion($index, 'value', $event)" />
+          </div>
+        }
+
+        <button class="btn-delete" (click)="eliminarNodo($index)" title="Eliminar">✕</button>
+      </div>
+    }
+
+    @if (grupo().conditions.length === 0) {
+      <p class="grupo__empty">Sin condiciones. Agrega una arriba.</p>
+    }
+  </div>
+</div>
