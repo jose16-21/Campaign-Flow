@@ -1,0 +1,129 @@
+<div class="editor">
+  <div class="editor__topbar">
+    <button class="btn-back" (click)="volver()">← Campañas</button>
+    <h2 class="editor__title">{{ campania()?.name ?? 'Editor de campania' }}</h2>
+    @if (error()) { <span class="error-msg">{{ error() }}</span> }
+    <button class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
+      {{ guardando() ? 'Guardando...' : 'Guardar canvas' }}
+    </button>
+  </div>
+
+  <div class="editor__body">
+    <!-- Paleta -->
+    <aside class="palette">
+      <p class="palette__title">Componentes</p>
+      @for (item of paleta; track item.type) {
+        <div class="palette__item" fExternalItem [fData]="item">
+          <span class="palette__icon" [class.palette__icon--sms]="item.type === 'sms'">
+            {{ item.icon }}
+          </span>
+          <span>{{ item.label }}</span>
+        </div>
+      }
+    </aside>
+
+    <!-- Canvas -->
+    <div class="canvas-wrapper">
+      <f-flow
+        fDraggable
+        (fCreateNode)="onCrearNodo($event)"
+        (fMoveNodes)="onMoverNodos($event)"
+        (fCreateConnection)="onCrearConexion($event)">
+
+        <f-background />
+
+        <f-canvas>
+          @for (nodo of nodos(); track nodo.id) {
+            <div
+              class="nodo"
+              [class.nodo--segment]="nodo.type === 'segment'"
+              [class.nodo--sms]="nodo.type === 'sms'"
+              [class.nodo--activo]="nodoActivo()?.id === nodo.id"
+              fNode
+              [fNodeId]="nodo.id"
+              [fNodePosition]="{ x: nodo.x, y: nodo.y }"
+              (click)="seleccionarNodo(nodo)">
+
+              <div class="nodo__header">
+                <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
+                <span class="nodo__type">{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</span>
+              </div>
+
+              <div class="nodo__body" [class.nodo__body--sms]="nodo.type === 'sms'">
+                @if (nodo.type === 'segment') {
+                  {{ segmentConfig(nodo).filters?.conditions?.length ?? 0 }} filtro(s)
+                } @else {
+                  {{ truncar(smsConfig(nodo).message) }}
+                }
+              </div>
+
+              <div class="nodo__connectors">
+                <div class="connector connector--in" fNodeInput [fInputId]="nodo.id + '_in'"></div>
+                <div class="connector connector--out" fNodeOutput [fOutputId]="nodo.id + '_out'"></div>
+              </div>
+            </div>
+          }
+        </f-canvas>
+
+        @for (arista of aristas(); track arista.source + arista.target) {
+          <f-connection
+            [fOutputId]="arista.source + '_out'"
+            [fInputId]="arista.target + '_in'">
+          </f-connection>
+        }
+      </f-flow>
+    </div>
+
+    <!-- Panel de configuración -->
+    @if (nodoActivo(); as nodo) {
+      <aside class="config-panel">
+        <div class="config-panel__header">
+          <h3>{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</h3>
+          <button class="btn-close" (click)="nodoActivo.set(null)">✕</button>
+        </div>
+
+        <div class="config-panel__body">
+          @if (nodo.type === 'segment') {
+            <p class="config-label">Filtros</p>
+            <app-filter-builder
+              [grupo]="segmentConfig(nodo).filters ?? { op: 'AND', conditions: [] }"
+              (grupoChange)="actualizarFiltros($event)" />
+
+            <button
+              class="btn btn--secondary btn--full"
+              [disabled]="cargandoAudiencia()"
+              (click)="previewAudiencia()">
+              {{ cargandoAudiencia() ? 'Calculando...' : 'Preview audiencia' }}
+            </button>
+
+            @if (audiencia(); as a) {
+              <div class="audiencia">
+                <p class="audiencia__total">{{ a.total }} contacto(s) coinciden</p>
+                @for (c of a.contactos.slice(0, 5); track c.id) {
+                  <div class="audiencia__item">
+                    {{ c.first_name }} {{ c.last_name }}
+                    <span class="audiencia__email">{{ c.email }}</span>
+                  </div>
+                }
+              </div>
+            }
+          }
+
+          @if (nodo.type === 'sms') {
+            <p class="config-label">Mensaje</p>
+            <textarea
+              class="sms-textarea"
+              [class.sms-textarea--error]="superaLimiteSms"
+              [value]="smsConfig(nodo).message"
+              (input)="actualizarMensaje($any($event.target).value)"
+              placeholder="Escribe el mensaje SMS...">
+            </textarea>
+            <p class="sms-contador" [class.sms-contador--error]="superaLimiteSms">
+              {{ contadorSms }}
+            </p>
+          }
+        </div>
+      </aside>
+    }
+  </div>
+</div>

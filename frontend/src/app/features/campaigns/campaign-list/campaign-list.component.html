@@ -1,0 +1,51 @@
+<div class="page">
+  <div class="page__header">
+    <h1>Campañas</h1>
+    <button class="btn btn--primary" (click)="crear()">+ Nueva campaña</button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert--error">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="loading">Cargando...</div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Creada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of campanias(); track c.id) {
+            <tr class="table__row" (click)="abrir(c.id)">
+              <td class="table__name">{{ c.name }}</td>
+              <td class="table__desc">{{ c.description || '—' }}</td>
+              <td>
+                <span class="badge" [class.badge--active]="c.status === 'ACTIVE'">
+                  {{ c.status === 'ACTIVE' ? 'Activa' : 'Borrador' }}
+                </span>
+              </td>
+              <td>{{ c.created_at | date: 'dd/MM/yyyy' }}</td>
+              <td>
+                <button class="btn btn--danger btn--sm" (click)="eliminar($event, c.id)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="table__empty">No hay campañas. Crea una nueva.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

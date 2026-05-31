@@ -19,6 +19,8 @@ export interface FilterGroup {
   conditions: (Condition | FilterGroup)[];
 }
 
+export type FilterNode = Condition | FilterGroup;
+
 export function isFilterGroup(node: Condition | FilterGroup): node is FilterGroup {
   return 'op' in node;
 }
