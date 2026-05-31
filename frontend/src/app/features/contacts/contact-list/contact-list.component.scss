@@ -67,8 +67,9 @@
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: #f8f8ff; }
 
-  &__name { font-weight: 500; }
-  &__empty { text-align: center; color: #999; padding: 40px !important; }
+  &__name    { font-weight: 500; }
+  &__empty   { text-align: center; color: #999; padding: 40px !important; }
+  &__actions { white-space: nowrap; display: flex; gap: 6px; }
 }
 
 .badge {
@@ -116,7 +117,8 @@
 
   &--primary { background: #1a1a2e; color: #fff; border-color: #1a1a2e; &:hover { background: #2a2a4e; } }
   &--outline { background: #fff; border-color: #1a1a2e; color: #1a1a2e; &:hover { background: #f8f8ff; } }
-  &--ghost { background: none; border-color: #ddd; color: #666; &:hover { background: #f5f5f5; } }
+  &--ghost   { background: none; border-color: #ddd; color: #666; &:hover { background: #f5f5f5; } }
+  &--danger  { background: #fff0f0; color: #c62828; border-color: #f5c6cb; &:hover { background: #fce8e8; } }
   &--sm { padding: 5px 12px; font-size: 12px; }
 }
 
@@ -134,7 +136,8 @@
 }
 
 .alert { padding: 12px 16px; border-radius: 6px;
-  &--error { background: #fff0f0; color: #c62828; border: 1px solid #f5c6cb; }
+  &--error   { background: #fff0f0; color: #c62828; border: 1px solid #f5c6cb; }
+  &--success { background: #e6f4ea; color: #2e7d32; border: 1px solid #c3e6cb; }
 }
 
 .loading { text-align: center; padding: 40px; color: #666; }

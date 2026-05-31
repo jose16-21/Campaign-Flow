@@ -1,0 +1,86 @@
+<div class="modal-overlay" (click)="cancelar.emit()">
+  <div class="modal" (click)="$event.stopPropagation()">
+    <div class="modal__header">
+      <h2>{{ titulo }}</h2>
+      <button class="modal__close" (click)="cancelar.emit()">✕</button>
+    </div>
+
+    <div class="modal__body">
+      <div class="row">
+        <div class="field">
+          <label class="field__label">Nombre <span class="required">*</span></label>
+          <input type="text" class="field__input"
+            placeholder="Juan"
+            [ngModel]="form().first_name"
+            (ngModelChange)="set('first_name', $event)"
+            autofocus />
+        </div>
+        <div class="field">
+          <label class="field__label">Apellido <span class="required">*</span></label>
+          <input type="text" class="field__input"
+            placeholder="Pérez"
+            [ngModel]="form().last_name"
+            (ngModelChange)="set('last_name', $event)" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label">Email <span class="required">*</span></label>
+        <input type="email" class="field__input"
+          placeholder="juan@ejemplo.com"
+          [ngModel]="form().email"
+          (ngModelChange)="set('email', $event)"
+          [disabled]="esEdicion" />
+        @if (esEdicion) {
+          <span class="field__hint">El email no puede modificarse</span>
+        }
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field__label">Teléfono</label>
+          <input type="tel" class="field__input"
+            placeholder="+502 5555 5555"
+            [ngModel]="form().phone"
+            (ngModelChange)="set('phone', $event)" />
+        </div>
+        <div class="field">
+          <label class="field__label">Estado</label>
+          <select class="field__input field__input--select"
+            [ngModel]="form().status"
+            (ngModelChange)="set('status', $event)">
+            <option value="ACTIVE">Activo</option>
+            <option value="INACTIVE">Inactivo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label class="field__label">País</label>
+          <input type="text" class="field__input"
+            placeholder="GT"
+            [ngModel]="form().country"
+            (ngModelChange)="set('country', $event)" />
+        </div>
+        <div class="field">
+          <label class="field__label">Ciudad</label>
+          <input type="text" class="field__input"
+            placeholder="Guatemala"
+            [ngModel]="form().city"
+            (ngModelChange)="set('city', $event)" />
+        </div>
+      </div>
+    </div>
+
+    <div class="modal__footer">
+      <button class="btn btn--ghost" (click)="cancelar.emit()">Cancelar</button>
+      <button
+        class="btn btn--primary"
+        [disabled]="invalido || guardando()"
+        (click)="onSubmit()">
+        {{ guardando() ? 'Guardando...' : (esEdicion ? 'Guardar cambios' : 'Crear contacto') }}
+      </button>
+    </div>
+  </div>
+</div>
