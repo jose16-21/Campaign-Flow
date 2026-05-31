@@ -1,0 +1,35 @@
+{
+  "name": "Campaign Flow Builder",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "prisma.prisma",
+        "ms-azuretools.vscode-docker",
+        "ckolkman.vscode-postgres"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "typescript.tsdk": "frontend/node_modules/typescript/lib"
+      }
+    }
+  },
+
+  "forwardPorts": [3000, 4200, 3306],
+  "portsAttributes": {
+    "3000": { "label": "Backend API" },
+    "4200": { "label": "Frontend Angular" },
+    "3306": { "label": "MySQL" }
+  },
+
+  "postCreateCommand": "npm install && echo 'DATABASE_URL=\"mysql://campaign:campaign@db:3306/campaign_flow\"' > backend/.env && echo 'PORT=3000' >> backend/.env && echo 'FRONTEND_URL=http://localhost:4200' >> backend/.env",
+
+  "remoteUser": "node"
+}
