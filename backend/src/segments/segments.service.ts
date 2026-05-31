@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { FilterEngineService } from '../filter-engine/filter-engine.service';
-import { FilterGroup } from '../filter-engine/filter.types';
+import { FilterEngineService } from '../filter-engine/application/filter-engine.service';
+import { FilterGroup } from '../filter-engine/domain/filter.types';
 
 @Injectable()
 export class SegmentsService {
