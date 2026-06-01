@@ -1,6 +1,6 @@
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
-import { Type } from 'class-transformer';
-import type { FilterGroup } from '../../filter-engine/filter.types';
+import { Transform, Type } from 'class-transformer';
+import type { FilterGroup } from '../../filter-engine/domain/filter.types';
 
 export class QueryContactDto {
   @IsOptional()
@@ -20,5 +20,11 @@ export class QueryContactDto {
   search?: string;
 
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return undefined; }
+    }
+    return value;
+  })
   filters?: FilterGroup;
 }
