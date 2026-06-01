@@ -28,7 +28,8 @@
       <f-flow
         fDraggable
         (fCreateNode)="onCrearNodo($event)"
-        (fCreateConnection)="onCrearConexion($event)">
+        (fCreateConnection)="onCrearConexion($event)"
+        (fSelectionChange)="onSeleccionCambiada($event)">
 
         <f-background />
 
@@ -51,7 +52,7 @@
               <div class="nodo__drag-area" fDragHandle>
                 <div class="nodo__header">
                   <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
-                  <span class="nodo__type">{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</span>
+                  <span class="nodo__type">{{ nodo.name || (nodo.type === 'segment' ? 'Segmento' : 'SMS') }}</span>
                 </div>
 
                 <div class="nodo__body" [class.nodo__body--sms]="nodo.type === 'sms'">
@@ -81,15 +82,48 @@
     </div>
 
     <!-- Panel de configuración -->
+    <!-- Panel de conexiones — visible cuando no hay nodo activo -->
+    @if (!nodoActivo() && aristas().length > 0) {
+      <aside class="config-panel config-panel--conexiones" #conexionesPanel>
+        <div class="config-panel__resizer" (mousedown)="iniciarResize($event, conexionesPanel)"></div>
+        <div class="config-panel__header">
+          <h3>Conexiones</h3>
+        </div>
+        <div class="config-panel__body">
+          @for (arista of aristas(); track arista.source + '-' + arista.target) {
+            <div class="conexion-item">
+              <span class="conexion-item__label">
+                {{ etiquetaNodo(arista.source) }} → {{ etiquetaNodo(arista.target) }}
+              </span>
+              <button class="btn-delete" title="Eliminar conexión"
+                (click)="eliminarArista(arista.source, arista.target)">🗑</button>
+            </div>
+          }
+        </div>
+      </aside>
+    }
+
     @if (nodoActivo(); as nodo) {
       <aside class="config-panel" #configPanel>
         <div class="config-panel__resizer" (mousedown)="iniciarResize($event, configPanel)"></div>
         <div class="config-panel__header">
           <h3>{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</h3>
+          <button class="btn-delete" title="Eliminar nodo" (click)="eliminarNodoActivo()">🗑</button>
           <button class="btn-close" (click)="nodoActivo.set(null)">✕</button>
         </div>
 
         <div class="config-panel__body">
+          <!-- Nombre del nodo -->
+          <div class="nombre-nodo">
+            <p class="config-label">Nombre</p>
+            <input
+              type="text"
+              class="nombre-nodo__input"
+              [placeholder]="nodo.type === 'segment' ? 'Ej. Clientes GT activos' : 'Ej. Mensaje bienvenida'"
+              [value]="nodo.name ?? ''"
+              (input)="actualizarNombre($any($event.target).value)" />
+          </div>
+
           @if (nodo.type === 'segment') {
             <p class="config-label">Filtros</p>
             <app-filter-builder

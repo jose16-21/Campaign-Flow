@@ -21,6 +21,7 @@ export type NodeType = 'segment' | 'sms';
 export interface CanvasNode {
   id: string;
   type: NodeType;
+  name?: string;
   x: number;
   y: number;
   config: SegmentNodeConfig | SmsNodeConfig;

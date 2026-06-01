@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   inject,
   signal,
   OnInit,
@@ -10,6 +11,7 @@ import {
   FFlowModule,
   FCreateNodeEvent,
   FCreateConnectionEvent,
+  FSelectionChangeEvent,
 } from '@foblex/flow';
 import { GetCampaignUseCase }     from '../../../application/use-cases/campaigns/get-campaign.use-case';
 import { SaveCanvasUseCase }      from '../../../application/use-cases/campaigns/save-canvas.use-case';
@@ -53,7 +55,8 @@ export class CampaignEditorComponent implements OnInit {
   readonly guardando         = signal(false);
   readonly error             = signal<string | null>(null);
   readonly exito             = signal<string | null>(null);
-  readonly nodosConError     = signal<Set<string>>(new Set());
+  readonly nodosConError          = signal<Set<string>>(new Set());
+  readonly conexionesSeleccionadas = signal<string[]>([]);
   readonly audiencia         = signal<AudienceResult | null>(null);
   readonly cargandoAudiencia = signal(false);
 
@@ -109,9 +112,18 @@ export class CampaignEditorComponent implements OnInit {
 
   onCrearConexion(evento: FCreateConnectionEvent): void {
     if (!evento.targetId) return;
-    const sourceId = evento.sourceId.replace('_out', '');
-    const targetId = evento.targetId.replace('_in', '');
+    let sourceId = evento.sourceId.replace('_out', '');
+    let targetId = evento.targetId.replace('_in', '');
     if (sourceId === targetId) return;
+
+    // Auto-corregir dirección invertida: si el usuario arrastró SMS → Segmento,
+    // se invierte para que siempre quede Segmento → SMS
+    const sourceNodo = this.nodos().find(n => n.id === sourceId);
+    const targetNodo = this.nodos().find(n => n.id === targetId);
+    if (sourceNodo?.type === 'sms' && targetNodo?.type === 'segment') {
+      [sourceId, targetId] = [targetId, sourceId];
+    }
+
     const existe = this.aristas().some(
       a => a.source === sourceId && a.target === targetId,
     );
@@ -123,6 +135,7 @@ export class CampaignEditorComponent implements OnInit {
   seleccionarNodo(nodo: CanvasNode): void {
     this.nodoActivo.set(this.nodoActivo()?.id === nodo.id ? null : nodo);
     this.audiencia.set(null);
+    this.conexionesSeleccionadas.set([]); // limpiar selección de conexión al abrir panel
   }
 
   actualizarConfig(config: SegmentNodeConfig | SmsNodeConfig): void {
@@ -131,6 +144,14 @@ export class CampaignEditorComponent implements OnInit {
     const actualizado = { ...activo, config };
     this.nodoActivo.set(actualizado);
     this.nodos.update(n => n.map(nd => nd.id === activo.id ? actualizado : nd));
+  }
+
+  actualizarNombre(nombre: string): void {
+    const activo = this.nodoActivo();
+    if (!activo) return;
+    const actualizado = { ...activo, name: nombre.trim() || undefined };
+    this.nodoActivo.set(actualizado);
+    this.nodos.update(ns => ns.map(n => n.id === activo.id ? actualizado : n));
   }
 
   actualizarFiltros(filtros: FilterGroup): void {
@@ -243,6 +264,73 @@ export class CampaignEditorComponent implements OnInit {
     } finally {
       this.guardando.set(false);
     }
+  }
+
+  onSeleccionCambiada(evento: FSelectionChangeEvent): void {
+    // foblex dispara eventos vacíos al hacer mousedown en cualquier lugar.
+    // Solo se registran conexiones cuando hay IDs; se limpian explícitamente
+    // al eliminar o al seleccionar un nodo.
+    if (evento.connectionIds?.length) {
+      this.conexionesSeleccionadas.set(evento.connectionIds);
+    } else if (evento.nodeIds?.length) {
+      // El usuario seleccionó un nodo → limpiar selección de conexión
+      this.conexionesSeleccionadas.set([]);
+    }
+    // Evento vacío (click en canvas) → conservar selección hasta Delete
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onTeclaPresionada(event: KeyboardEvent): void {
+    if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+    // No interferir con inputs de texto
+    const tag = (event.target as HTMLElement).tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    if (this.conexionesSeleccionadas().length > 0) {
+      event.preventDefault();
+      this.eliminarConexionesSeleccionadas();
+    } else if (this.nodoActivo()) {
+      event.preventDefault();
+      this.eliminarNodoActivo();
+    }
+  }
+
+  etiquetaNodo(id: string): string {
+    const nodo = this.nodos().find(n => n.id === id);
+    if (!nodo) return id;
+    if (nodo.name) return nodo.name;
+    return nodo.type === 'segment' ? 'Segmento' : `SMS "${this.truncar(this.smsConfig(nodo).message)}"`;
+  }
+
+  eliminarArista(source: string, target: string): void {
+    this.aristas.update(as => as.filter(a => !(a.source === source && a.target === target)));
+  }
+
+  eliminarNodoActivo(): void {
+    const activo = this.nodoActivo();
+    if (!activo) return;
+    // Quitar nodo y todas las aristas que lo involucran
+    this.nodos.update(ns => ns.filter(n => n.id !== activo.id));
+    this.aristas.update(as => as.filter(
+      a => a.source !== activo.id && a.target !== activo.id,
+    ));
+    this.nodoActivo.set(null);
+    this.audiencia.set(null);
+  }
+
+  eliminarConexionesSeleccionadas(): void {
+    const ids = [...this.conexionesSeleccionadas()]; // copia antes de limpiar
+    this.conexionesSeleccionadas.set([]);
+    if (!ids.length) return;
+    console.log('[canvas] eliminar conexiones, ids:', ids);
+    // El connectionId de foblex incluye sourceId+targetId concatenados
+    this.aristas.update(as => as.filter(a => {
+      const source = a.source + '_out';
+      const target = a.target + '_in';
+      const match = ids.some(id => id.includes(source) && id.includes(target));
+      if (match) console.log('[canvas] eliminando arista:', a);
+      return !match;
+    }));
   }
 
   volver(): void {
