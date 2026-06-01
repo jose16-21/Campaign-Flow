@@ -178,6 +178,8 @@ src/app/
 
 ## Decisiones técnicas
 
+> Para el detalle completo de cada decisión con contexto, alternativas consideradas y consecuencias, ver **[ADR.md](ADR.md)** (Architecture Decision Record).
+
 ### NestJS (backend)
 Elegido sobre Express por su sistema de módulos e inyección de dependencias nativa, que encaja directamente con el patrón de puertos y adaptadores. Los `InjectionToken` de NestJS son el punto de composición del hexágono.
 
