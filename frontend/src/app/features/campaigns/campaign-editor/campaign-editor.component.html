@@ -27,10 +27,11 @@
       <f-flow
         fDraggable
         (fCreateNode)="onCrearNodo($event)"
-        (fMoveNodes)="onMoverNodos($event)"
         (fCreateConnection)="onCrearConexion($event)">
 
         <f-background />
+
+        <f-connection-for-create />
 
         <f-canvas>
           @for (nodo of nodos(); track nodo.id) {
@@ -41,20 +42,23 @@
               [class.nodo--activo]="nodoActivo()?.id === nodo.id"
               fNode
               [fNodeId]="nodo.id"
-              [fNodePosition]="{ x: nodo.x, y: nodo.y }"
+              [fNodePosition]="getPosicion(nodo)"
+              (fNodePositionChange)="onPosicionCambiada(nodo.id, $event)"
               (click)="seleccionarNodo(nodo)">
 
-              <div class="nodo__header">
-                <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
-                <span class="nodo__type">{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</span>
-              </div>
+              <div class="nodo__drag-area" fDragHandle>
+                <div class="nodo__header">
+                  <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
+                  <span class="nodo__type">{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</span>
+                </div>
 
-              <div class="nodo__body" [class.nodo__body--sms]="nodo.type === 'sms'">
-                @if (nodo.type === 'segment') {
-                  {{ segmentConfig(nodo).filters?.conditions?.length ?? 0 }} filtro(s)
-                } @else {
-                  {{ truncar(smsConfig(nodo).message) }}
-                }
+                <div class="nodo__body" [class.nodo__body--sms]="nodo.type === 'sms'">
+                  @if (nodo.type === 'segment') {
+                    {{ segmentConfig(nodo).filters?.conditions?.length ?? 0 }} filtro(s)
+                  } @else {
+                    {{ truncar(smsConfig(nodo).message) }}
+                  }
+                </div>
               </div>
 
               <div class="nodo__connectors">
@@ -65,7 +69,7 @@
           }
         </f-canvas>
 
-        @for (arista of aristas(); track arista.source + arista.target) {
+        @for (arista of aristas(); track (arista.source ?? '') + '-' + (arista.target ?? '')) {
           <f-connection
             [fOutputId]="arista.source + '_out'"
             [fInputId]="arista.target + '_in'">
@@ -76,7 +80,8 @@
 
     <!-- Panel de configuración -->
     @if (nodoActivo(); as nodo) {
-      <aside class="config-panel">
+      <aside class="config-panel" #configPanel>
+        <div class="config-panel__resizer" (mousedown)="iniciarResize($event, configPanel)"></div>
         <div class="config-panel__header">
           <h3>{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</h3>
           <button class="btn-close" (click)="nodoActivo.set(null)">✕</button>
