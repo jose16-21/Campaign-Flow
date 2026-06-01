@@ -16,6 +16,7 @@ import {
 import { GetCampaignUseCase }     from '../../../application/use-cases/campaigns/get-campaign.use-case';
 import { SaveCanvasUseCase }      from '../../../application/use-cases/campaigns/save-canvas.use-case';
 import { ResolveAudienceUseCase } from '../../../application/use-cases/segments/resolve-audience.use-case';
+import { CAMPAIGN_REPOSITORY }    from '../../../infrastructure/tokens/repository.tokens';
 import { FilterBuilderComponent } from '../../../shared/components/filter-builder/filter-builder.component';
 import type {
   Campaign,
@@ -47,12 +48,14 @@ export class CampaignEditorComponent implements OnInit {
   private readonly getUseCase      = inject(GetCampaignUseCase);
   private readonly saveUseCase     = inject(SaveCanvasUseCase);
   private readonly audienceUseCase = inject(ResolveAudienceUseCase);
+  private readonly campañaRepo     = inject(CAMPAIGN_REPOSITORY);
 
   readonly campania          = signal<Campaign | null>(null);
   readonly nodos             = signal<CanvasNode[]>([]);
   readonly aristas           = signal<CanvasEdge[]>([]);
   readonly nodoActivo        = signal<CanvasNode | null>(null);
   readonly guardando         = signal(false);
+  readonly cambiandoEstado   = signal(false);
   readonly error             = signal<string | null>(null);
   readonly exito             = signal<string | null>(null);
   readonly nodosConError          = signal<Set<string>>(new Set());
@@ -347,6 +350,24 @@ export class CampaignEditorComponent implements OnInit {
       if (match) console.log('[canvas] eliminando arista:', a);
       return !match;
     }));
+  }
+
+  async toggleEstado(): Promise<void> {
+    const camp = this.campania();
+    if (!camp) return;
+    this.cambiandoEstado.set(true);
+    this.error.set(null);
+    try {
+      const nuevoEstado = camp.status === 'ACTIVE' ? 'DRAFT' : 'ACTIVE';
+      const actualizada = await this.campañaRepo.actualizar(camp.id, { status: nuevoEstado });
+      this.campania.set(actualizada);
+      this.exito.set(`Campaña ${nuevoEstado === 'ACTIVE' ? 'activada' : 'pausada a borrador'}`);
+      setTimeout(() => this.exito.set(null), 3000);
+    } catch {
+      this.error.set('Error al cambiar el estado de la campaña');
+    } finally {
+      this.cambiandoEstado.set(false);
+    }
   }
 
   volver(): void {
