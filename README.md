@@ -30,6 +30,8 @@ npm run dev
 
 5. Abrir http://localhost:4200
 
+> **Después de un rebuild del container**: el `postCreateCommand` solo corre en la primera creación. Si reconstruyes el container, los servicios no arrancan solos. Abre la terminal integrada y ejecuta `npm run dev` desde la raíz del workspace para levantarlos nuevamente.
+
 ### Opción B — Instalación local
 
 Requisitos: Node 24+, MySQL 8.4 corriendo localmente.
@@ -196,7 +198,7 @@ Librería Angular-nativa compatible con `>=17.3.0`. Ofrece `FFlowModule` con tod
 El estado del canvas y los formularios se maneja con `signal()` y `update()` en lugar de RxJS observables. Más simple, sin subscripciones ni `async pipe` en el contexto del editor.
 
 ### Arquitectura hexagonal (puertos y adaptadores)
-Aplicada en `ContactsModule` y `FilterEngineModule` (los más críticos). `CampaignsModule` y `SegmentsModule` son thin services sin lógica compleja, por lo que forzar hexagonal ahí sería over-engineering. Ver [PLAN.md](PLAN.md) para el razonamiento.
+Aplicada en `ContactsModule` y `FilterEngineModule` (los más críticos). `CampaignsModule` y `SegmentsModule` son thin services sin lógica compleja, por lo que forzar hexagonal ahí sería over-engineering. Ver [ADR.md](ADR.md) para el razonamiento detallado.
 
 ---
 
