@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Contact {
+  id         Int       @id @default(autoincrement())
+  first_name String
+  last_name  String
+  phone      String?
+  email      String    @unique
+  country    String?
+  city       String?
+  status     Status    @default(ACTIVE)
+  attributes Json      @default("{}")
+  created_at DateTime  @default(now())
+  deleted_at DateTime?
+
+  @@index([status])
+  @@index([country])
+  @@index([deleted_at])
+  @@map("contacts")
+}
+
+model Campaign {
+  id          Int            @id @default(autoincrement())
+  name        String
+  description String?
+  status      CampaignStatus @default(DRAFT)
+  canvas      Json           @default("{\"nodes\":[],\"edges\":[]}")
+  created_at  DateTime       @default(now())
+
+  @@map("campaigns")
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+}

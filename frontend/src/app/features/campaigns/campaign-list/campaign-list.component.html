@@ -1,0 +1,102 @@
+<div class="page">
+  <div class="page__header">
+    <h1>Campañas</h1>
+    <button class="btn btn--primary" (click)="abrirModal()">+ Nueva campaña</button>
+  </div>
+
+  @if (exito()) {
+    <div class="alert alert--success">{{ exito() }}</div>
+  }
+  @if (error()) {
+    <div class="alert alert--error">{{ error() }}</div>
+  }
+
+  @if (cargando()) {
+    <div class="loading">Cargando...</div>
+  } @else {
+    <div class="table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Creada</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of campanias(); track c.id) {
+            <tr class="table__row" (click)="abrir(c.id)">
+              <td class="table__name">{{ c.name }}</td>
+              <td class="table__desc">{{ c.description || '—' }}</td>
+              <td>
+                <span class="badge" [class.badge--active]="c.status === 'ACTIVE'">
+                  {{ c.status === 'ACTIVE' ? 'Activa' : 'Borrador' }}
+                </span>
+              </td>
+              <td>{{ c.created_at | date: 'dd/MM/yyyy' }}</td>
+              <td>
+                <button class="btn btn--danger btn--sm" (click)="eliminar($event, c.id)">
+                  Eliminar
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="table__empty">No hay campañas. Crea una nueva.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- Modal nueva campaña -->
+@if (mostrarModal()) {
+  <div class="modal-overlay" (click)="cerrarModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>Nueva campaña</h2>
+        <button class="modal__close" (click)="cerrarModal()">✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="field">
+          <label class="field__label" for="camp-name">Nombre <span class="required">*</span></label>
+          <input
+            id="camp-name"
+            type="text"
+            class="field__input"
+            placeholder="Ej. Campaña de bienvenida"
+            [ngModel]="form().name"
+            (ngModelChange)="setNombre($event)"
+            (keydown.enter)="confirmarCrear()"
+            autofocus />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="camp-desc">Descripción</label>
+          <textarea
+            id="camp-desc"
+            class="field__input field__input--textarea"
+            placeholder="Descripción opcional de la campaña"
+            rows="3"
+            [ngModel]="form().description"
+            (ngModelChange)="setDescripcion($event)"></textarea>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn btn--ghost" (click)="cerrarModal()">Cancelar</button>
+        <button
+          class="btn btn--primary"
+          [disabled]="!form().name.trim() || guardando()"
+          (click)="confirmarCrear()">
+          {{ guardando() ? 'Creando...' : 'Crear campaña' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

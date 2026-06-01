@@ -1,0 +1,78 @@
+.grupo {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+
+  &--nested { background: #fafafa; margin-top: 8px; }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  &__label { font-size: 11px; color: #999; flex: 1; }
+
+  &__actions { display: flex; gap: 8px; }
+
+  &__conditions { padding: 8px 12px; display: flex; flex-direction: column; gap: 6px; }
+
+  &__empty { font-size: 12px; color: #bbb; text-align: center; padding: 8px; }
+}
+
+.op-toggle {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #1a1a2e;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.condition-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.condition {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+  flex-wrap: wrap;
+
+  select, input {
+    flex: 1;
+    min-width: 80px;
+    padding: 5px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    background: #fff;
+  }
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: #1a1a2e;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  &:hover { text-decoration: underline; }
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  flex-shrink: 0;
+  &:hover { color: #c62828; }
+}
