@@ -293,6 +293,76 @@
   &:hover { color: #333; }
 }
 
+.btn-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: .6;
+  &:hover { opacity: 1; background: #fff0f0; }
+}
+
+.nombre-nodo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  &__input {
+    padding: 7px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    &:focus { outline: none; border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26,26,46,.08); }
+  }
+}
+
+.conexion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  background: #fafafa;
+  gap: 8px;
+
+  &__label {
+    font-size: 12px;
+    color: #444;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.config-panel--conexiones {
+  width: 260px;
+  min-width: 200px;
+}
+
+.hint-delete {
+  font-size: 12px;
+  color: #c62828;
+  background: #fff0f0;
+  border: 1px solid #f5c6cb;
+  padding: 4px 10px;
+  border-radius: 4px;
+
+  kbd {
+    font-family: monospace;
+    background: #c62828;
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
+}
+
 .error-msg { color: #c62828; font-size: 12px; }
 
 .status-msg {
