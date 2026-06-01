@@ -41,6 +41,7 @@
               [class.nodo--segment]="nodo.type === 'segment'"
               [class.nodo--sms]="nodo.type === 'sms'"
               [class.nodo--activo]="nodoActivo()?.id === nodo.id"
+              [class.nodo--error]="nodosConError().has(nodo.id)"
               fNode
               [fNodeId]="nodo.id"
               [fNodePosition]="getPosicion(nodo)"
