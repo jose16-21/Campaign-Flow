@@ -4,6 +4,16 @@
     <h2 class="editor__title">{{ campania()?.name ?? 'Editor de campania' }}</h2>
     @if (error()) { <span class="status-msg status-msg--error">{{ error() }}</span> }
     @if (exito()) { <span class="status-msg status-msg--exito">✓ {{ exito() }}</span> }
+    @if (campania()) {
+      <button
+        class="btn btn--status"
+        [class.btn--status-active]="campania()!.status === 'ACTIVE'"
+        [class.btn--status-draft]="campania()!.status === 'DRAFT'"
+        [disabled]="cambiandoEstado()"
+        (click)="toggleEstado()">
+        {{ cambiandoEstado() ? '...' : (campania()!.status === 'ACTIVE' ? '● Activa' : '○ Borrador') }}
+      </button>
+    }
     <button class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
       {{ guardando() ? 'Guardando...' : 'Guardar canvas' }}
     </button>
