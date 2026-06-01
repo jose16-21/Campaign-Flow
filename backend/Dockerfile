@@ -2,9 +2,11 @@
 # docker build -f backend/Dockerfile .
 
 # ── Etapa 1: build ────────────────────────────────────────────────────────────
-FROM node:24-alpine AS builder
+FROM node:24-slim AS builder
 
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json          ./
 COPY backend/package*.json  ./backend/
@@ -16,13 +18,14 @@ COPY backend ./backend
 RUN cd backend && npx prisma generate && npm run build
 
 # ── Etapa 2: producción ───────────────────────────────────────────────────────
-FROM node:24-alpine AS production
+FROM node:24-slim AS production
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y --no-install-recommends openssl wget && rm -rf /var/lib/apt/lists/*
+
 ENV NODE_ENV=production
 
-# Copiar node_modules del builder (incluye @prisma/client ya generado)
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/backend/dist ./backend/dist
 COPY backend/prisma                   ./backend/prisma
