@@ -18,6 +18,11 @@ async function bootstrap() {
     }),
   );
 
+  // Endpoint de salud para healthcheck de App Runner / Docker
+  app.getHttpAdapter().get('/health', (_req, res) => {
+    res.status(200).json({ status: 'ok' });
+  });
+
   await app.listen(process.env['PORT'] ?? 3000);
 }
 
