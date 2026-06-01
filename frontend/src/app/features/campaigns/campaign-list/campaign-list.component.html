@@ -1,7 +1,13 @@
 <div class="page">
   <div class="page__header">
     <h1>Campañas</h1>
-    <button class="btn btn--primary" (click)="abrirModal()">+ Nueva campaña</button>
+    <div class="page__header-actions">
+      <label class="btn btn--outline" [class.btn--disabled]="importando()" title="Importar campaña desde JSON">
+        {{ importando() ? 'Importando...' : '↑ Importar JSON' }}
+        <input type="file" accept=".json" style="display:none" (change)="importarJSON($event)" [disabled]="importando()" />
+      </label>
+      <button class="btn btn--primary" (click)="abrirModal()">+ Nueva campaña</button>
+    </div>
   </div>
 
   @if (exito()) {
