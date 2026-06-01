@@ -19,10 +19,20 @@
     flex-shrink: 0;
   }
 
-  &__title {
+  &__title-group {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  &__title {
     font-size: 16px;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   &__body {
@@ -333,6 +343,63 @@
   &--secondary { background: #f0f0f0; color: #1a1a2e; &:hover { background: #e0e0e0; } &:disabled { opacity: .5; cursor: not-allowed; } }
   &--full { width: 100%; }
 }
+
+.btn-edit-camp {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  &:hover { color: #1a1a2e; background: #f0f0f0; }
+}
+
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: #fff; border-radius: 10px;
+  width: 100%; max-width: 480px;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+
+  &__header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0;
+    h3 { font-size: 17px; font-weight: 600; }
+  }
+
+  &__close {
+    background: none; border: none; font-size: 18px;
+    cursor: pointer; color: #999;
+    &:hover { color: #333; }
+  }
+
+  &__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+  &__footer {
+    display: flex; justify-content: flex-end; gap: 8px;
+    padding: 16px 24px; border-top: 1px solid #f0f0f0;
+  }
+}
+
+.field {
+  display: flex; flex-direction: column; gap: 5px;
+  &__label { font-size: 13px; font-weight: 500; color: #333; }
+  &__input {
+    padding: 8px 11px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 14px; font-family: inherit;
+    &:focus { outline: none; border-color: #1a1a2e; }
+    &--textarea { resize: vertical; min-height: 72px; }
+  }
+}
+
+.btn--ghost { background: #fff; border: 1px solid #ddd; color: #555; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-size: 13px; &:hover { background: #f5f5f5; } }
 
 .btn-close {
   background: none;

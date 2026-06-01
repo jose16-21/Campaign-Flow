@@ -1,4 +1,4 @@
-import { IsArray, IsNotEmpty, IsNumber, IsObject, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CanvasNodeDto {
@@ -9,6 +9,10 @@ export class CanvasNodeDto {
   @IsString()
   @IsNotEmpty()
   type!: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
 
   @IsNumber()
   x!: number;

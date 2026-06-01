@@ -1,7 +1,10 @@
 <div class="editor">
   <div class="editor__topbar">
     <button class="btn-back" (click)="volver()">← Campañas</button>
-    <h2 class="editor__title">{{ campania()?.name ?? 'Editor de campania' }}</h2>
+    <div class="editor__title-group">
+      <h2 class="editor__title">{{ campania()?.name ?? 'Sin nombre' }}</h2>
+      <button class="btn-edit-camp" title="Editar nombre y descripción" (click)="editandoNombre.set(true)">✎</button>
+    </div>
     @if (error()) { <span class="status-msg status-msg--error">{{ error() }}</span> }
     @if (exito()) { <span class="status-msg status-msg--exito">✓ {{ exito() }}</span> }
     @if (campania()) {
@@ -210,3 +213,37 @@
     }
   </div>
 </div>
+
+<!-- Modal editar campaña -->
+@if (editandoNombre()) {
+  <div class="modal-overlay" (click)="editandoNombre.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>Editar campaña</h3>
+        <button class="modal__close" (click)="editandoNombre.set(false)">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="field">
+          <label class="field__label">Nombre</label>
+          <input #campNombre type="text" class="field__input"
+            [value]="campania()?.name ?? ''"
+            (keydown.enter)="guardarNombreCamp(campNombre.value, campDesc.value)"
+            (keydown.escape)="editandoNombre.set(false)" />
+        </div>
+        <div class="field">
+          <label class="field__label">Descripción</label>
+          <textarea #campDesc class="field__input field__input--textarea"
+            [value]="campania()?.description ?? ''"
+            rows="3"
+            (keydown.escape)="editandoNombre.set(false)"></textarea>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" (click)="editandoNombre.set(false)">Cancelar</button>
+        <button class="btn btn--primary" (click)="guardarNombreCamp(campNombre.value, campDesc.value)">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+}

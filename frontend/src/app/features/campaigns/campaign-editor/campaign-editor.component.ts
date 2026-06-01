@@ -62,6 +62,7 @@ export class CampaignEditorComponent implements OnInit {
   readonly nodoActivo        = signal<CanvasNode | null>(null);
   readonly guardando         = signal(false);
   readonly cambiandoEstado   = signal(false);
+  readonly editandoNombre    = signal(false);
   readonly error             = signal<string | null>(null);
   readonly exito             = signal<string | null>(null);
   readonly nodosConError          = signal<Set<string>>(new Set());
@@ -401,6 +402,21 @@ export class CampaignEditorComponent implements OnInit {
     return contacto
       ? resolverVariables(mensaje, contacto)
       : resolverVariablesEjemplo(mensaje);
+  }
+
+  async guardarNombreCamp(nombre: string, descripcion = ''): Promise<void> {
+    this.editandoNombre.set(false);
+    const camp = this.campania();
+    if (!camp || !nombre.trim()) return;
+    try {
+      const actualizada = await this.campañaRepo.actualizar(camp.id, {
+        name: nombre.trim(),
+        description: descripcion.trim() || undefined,
+      });
+      this.campania.set(actualizada);
+    } catch {
+      this.error.set('Error al actualizar la campaña');
+    }
   }
 
   async toggleEstado(): Promise<void> {
