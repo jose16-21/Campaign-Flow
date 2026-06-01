@@ -1,0 +1,42 @@
+name: Backend CI
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+jobs:
+  test-and-build:
+    name: Tests y build — Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente Prisma
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Verificar tipos TypeScript
+        working-directory: backend
+        run: npx tsc --noEmit
+
+      - name: Ejecutar tests unitarios
+        working-directory: backend
+        run: npm test -- --no-coverage
+
+      - name: Build de producción
+        working-directory: backend
+        run: npm run build
