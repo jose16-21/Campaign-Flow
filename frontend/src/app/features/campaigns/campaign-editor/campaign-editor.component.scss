@@ -289,3 +289,19 @@
 }
 
 .error-msg { color: #c62828; font-size: 12px; }
+
+.status-msg {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 4px;
+  animation: fadeIn .2s ease;
+
+  &--error { color: #c62828; background: #fff0f0; }
+  &--exito { color: #2e7d32; background: #e6f4ea; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -2,7 +2,8 @@
   <div class="editor__topbar">
     <button class="btn-back" (click)="volver()">← Campañas</button>
     <h2 class="editor__title">{{ campania()?.name ?? 'Editor de campania' }}</h2>
-    @if (error()) { <span class="error-msg">{{ error() }}</span> }
+    @if (error()) { <span class="status-msg status-msg--error">{{ error() }}</span> }
+    @if (exito()) { <span class="status-msg status-msg--exito">✓ {{ exito() }}</span> }
     <button class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
       {{ guardando() ? 'Guardando...' : 'Guardar canvas' }}
     </button>
