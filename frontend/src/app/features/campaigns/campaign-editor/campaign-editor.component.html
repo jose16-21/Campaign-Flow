@@ -175,16 +175,35 @@
 
           @if (nodo.type === 'sms') {
             <p class="config-label">Mensaje</p>
+
+            <!-- Variables disponibles -->
+            <div class="variables-chips">
+              @for (v of variablesDisponibles; track v.token) {
+                <button class="chip" (click)="insertarVariable(v.token)" [title]="v.etiqueta">
+                  {{ v.token }}
+                </button>
+              }
+            </div>
+
             <textarea
               class="sms-textarea"
               [class.sms-textarea--error]="superaLimiteSms"
               [value]="smsConfig(nodo).message"
               (input)="actualizarMensaje($any($event.target).value)"
-              placeholder="Escribe el mensaje SMS...">
+              placeholder="Hola {{'{{name}}'}}, tu plan es {{'{{plan}}'}}..."
+              #smsTextarea>
             </textarea>
             <p class="sms-contador" [class.sms-contador--error]="superaLimiteSms">
               {{ contadorSms }}
             </p>
+
+            <!-- Preview con variables resueltas -->
+            @if (smsConfig(nodo).message?.includes('{{')) {
+              <div class="sms-preview">
+                <p class="config-label">Preview</p>
+                <p class="sms-preview__texto">{{ previewMensaje(smsConfig(nodo).message) }}</p>
+              </div>
+            }
           }
         </div>
       </aside>
