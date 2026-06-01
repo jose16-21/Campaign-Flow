@@ -53,6 +53,7 @@ export class CampaignEditorComponent implements OnInit {
   readonly guardando         = signal(false);
   readonly error             = signal<string | null>(null);
   readonly exito             = signal<string | null>(null);
+  readonly nodosConError     = signal<Set<string>>(new Set());
   readonly audiencia         = signal<AudienceResult | null>(null);
   readonly cargandoAudiencia = signal(false);
 
@@ -155,9 +156,70 @@ export class CampaignEditorComponent implements OnInit {
     }
   }
 
+  private validarReglasGrafo(): string | null {
+    const nodos   = this.nodos();
+    const aristas = this.aristas();
+
+    // Canvas vacío → bloquear (no hay nada que guardar)
+    if (nodos.length === 0) {
+      return 'El canvas está vacío. Agrega al menos un Segmento y un SMS conectados.';
+    }
+
+    // Debe existir al menos un Segmento Y un SMS
+    const tieneSegmento = nodos.some(n => n.type === 'segment');
+    const tieneSms      = nodos.some(n => n.type === 'sms');
+
+    if (!tieneSegmento || !tieneSms) {
+      const nodosAislados = nodos.map(n => n.id);
+      this.nodosConError.set(new Set(nodosAislados));
+      return 'El canvas necesita al menos un nodo Segmento y un nodo SMS conectados para guardar.';
+    }
+
+    // Cada SMS debe tener un Segmento como origen
+    const nodosSmsDesconectados = nodos
+      .filter(n => n.type === 'sms')
+      .filter(sms => {
+        const tieneSegmentoOrigen = aristas.some(a => {
+          if (a.target !== sms.id) return false;
+          const origen = nodos.find(n => n.id === a.source);
+          return origen?.type === 'segment';
+        });
+        return !tieneSegmentoOrigen;
+      });
+
+    if (nodosSmsDesconectados.length > 0) {
+      this.nodosConError.set(new Set(nodosSmsDesconectados.map(n => n.id)));
+      const nombres = nodosSmsDesconectados
+        .map(n => `"${this.truncar(this.smsConfig(n).message)}"`)
+        .join(', ');
+      return `Nodo(s) SMS sin Segmento conectado: ${nombres}. Conecta un Segmento como origen antes de guardar.`;
+    }
+
+    // Cada Segmento debe tener al menos un SMS como destino
+    const segmentosDesconectados = nodos
+      .filter(n => n.type === 'segment')
+      .filter(seg => !aristas.some(a => {
+        if (a.source !== seg.id) return false;
+        const destino = nodos.find(n => n.id === a.target);
+        return destino?.type === 'sms';
+      }));
+
+    if (segmentosDesconectados.length > 0) {
+      this.nodosConError.set(new Set(segmentosDesconectados.map(n => n.id)));
+      return 'Nodo(s) Segmento sin SMS conectado como destino. Conecta al menos un SMS a cada Segmento.';
+    }
+
+    this.nodosConError.set(new Set());
+    return null;
+  }
+
   async guardar(): Promise<void> {
     const camp = this.campania();
     if (!camp) return;
+
+    const errorGrafo = this.validarReglasGrafo();
+    if (errorGrafo) { this.error.set(errorGrafo); return; }
+
     this.guardando.set(true);
     this.error.set(null);
     try {

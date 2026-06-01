@@ -116,6 +116,11 @@
 
   &--segment { border-color: #1a1a2e; }
   &--sms { border-color: #e57c00; }
+  &--error {
+    border-color: #c62828;
+    box-shadow: 0 0 0 2px rgba(198, 40, 40, .25);
+    animation: pulseError 1.5s ease-in-out 3;
+  }
   &--activo { box-shadow: 0 0 0 2px #4a90e2; }
 
   &__drag-area {
@@ -304,4 +309,9 @@
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseError {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(198, 40, 40, .25); }
+  50%       { box-shadow: 0 0 0 5px rgba(198, 40, 40, .45); }
 }
