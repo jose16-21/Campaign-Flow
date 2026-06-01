@@ -6,10 +6,17 @@ on:
       - 'frontend/**'
       - 'package.json'
       - 'package-lock.json'
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - 'frontend/**'
 
 jobs:
-  build:
-    name: Build — Frontend
+  # ── CI: build (PR y push a cualquier rama) ──────────────────────────────────
+  ci:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -32,3 +39,60 @@ jobs:
       - name: Build de producción
         working-directory: frontend
         run: npm run build -- --configuration=production
+
+  # ── Build imagen y push a ECR (solo en push a develop) ──────────────────────
+  docker-push:
+    name: Docker → ECR
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Login en Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build y push imagen frontend
+        env:
+          ECR_REGISTRY:   ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPO_FRONTEND }}
+          IMAGE_TAG:      ${{ github.sha }}
+        run: |
+          docker build \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -t $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            ./frontend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  # ── Deploy en App Runner (solo en push a master) ─────────────────────────────
+  deploy:
+    name: Deploy → App Runner
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      - name: Configurar credenciales AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Iniciar deploy en App Runner
+        run: |
+          aws apprunner start-deployment \
+            --service-arn ${{ secrets.APP_RUNNER_FRONTEND_ARN }} \
+            --region ${{ secrets.AWS_REGION }}
