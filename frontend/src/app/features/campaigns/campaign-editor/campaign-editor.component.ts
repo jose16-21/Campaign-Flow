@@ -27,6 +27,12 @@ import type {
 } from '../../../domain/models/campaign.model';
 import type { FilterGroup }    from '../../../domain/models/filter-tree.model';
 import type { AudienceResult } from '../../../domain/models/audience.model';
+import type { Contact }        from '../../../domain/models/contact.model';
+import {
+  SMS_VARIABLES,
+  resolverVariables,
+  resolverVariablesEjemplo,
+} from '../../../domain/models/sms-variables.model';
 
 type PaletteItem = { type: 'segment' | 'sms'; label: string; icon: string };
 
@@ -63,8 +69,10 @@ export class CampaignEditorComponent implements OnInit {
   readonly audiencia         = signal<AudienceResult | null>(null);
   readonly cargandoAudiencia = signal(false);
 
-  readonly paleta = PALETA;
+  readonly paleta              = PALETA;
+  readonly variablesDisponibles = SMS_VARIABLES;
   private nextId = 1;
+  private smsTextareaRef: HTMLTextAreaElement | null = null;
 
   // Map plano (no signal) para posiciones — evita disparar change detection durante el drag
   private readonly posiciones = new Map<string, { x: number; y: number }>();
@@ -78,8 +86,21 @@ export class CampaignEditorComponent implements OnInit {
         const nodos = camp.canvas.nodes ?? [];
         nodos.forEach(n => this.posiciones.set(n.id, { x: n.x, y: n.y }));
         this.nodos.set(nodos);
-        this.aristas.set(camp.canvas.edges ?? []);
-        this.nextId = nodos.length + 1;
+        // Auto-corregir aristas invertidas (SMS→Segmento) al cargar
+        const aristasCargadas = (camp.canvas.edges ?? []).map(a => {
+          const src = nodos.find(n => n.id === a.source);
+          const tgt = nodos.find(n => n.id === a.target);
+          return (src?.type === 'sms' && tgt?.type === 'segment')
+            ? { source: a.target, target: a.source }
+            : a;
+        });
+        this.aristas.set(aristasCargadas);
+        // nextId basado en el máximo índice "node-N" existente para evitar colisiones
+        const maxIdx = nodos.reduce((max, n) => {
+          const m = n.id.match(/^node-(\d+)$/);
+          return m ? Math.max(max, parseInt(m[1], 10)) : max;
+        }, 0);
+        this.nextId = maxIdx + 1;
       }
     } catch {
       this.error.set('No se pudo cargar la campaña');
@@ -350,6 +371,36 @@ export class CampaignEditorComponent implements OnInit {
       if (match) console.log('[canvas] eliminando arista:', a);
       return !match;
     }));
+  }
+
+  // Inserta un token {{variable}} en la posición actual del cursor del textarea
+  insertarVariable(token: string): void {
+    const textarea = document.querySelector<HTMLTextAreaElement>('.sms-textarea');
+    if (!textarea) {
+      this.actualizarMensaje((this.smsConfig(this.nodoActivo()!).message ?? '') + token);
+      return;
+    }
+    const inicio  = textarea.selectionStart ?? 0;
+    const fin     = textarea.selectionEnd   ?? 0;
+    const actual  = textarea.value;
+    const nuevo   = actual.slice(0, inicio) + token + actual.slice(fin);
+    this.actualizarMensaje(nuevo);
+    // Restaurar foco y posición del cursor
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const pos = inicio + token.length;
+      textarea.setSelectionRange(pos, pos);
+    });
+  }
+
+  // Resuelve las variables usando el primer contacto de la audiencia (si existe)
+  // o usando los valores de ejemplo del modelo
+  previewMensaje(mensaje: string): string {
+    const audiencia = this.audiencia();
+    const contacto  = audiencia?.contactos?.[0] as Contact | undefined;
+    return contacto
+      ? resolverVariables(mensaje, contacto)
+      : resolverVariablesEjemplo(mensaje);
   }
 
   async toggleEstado(): Promise<void> {
