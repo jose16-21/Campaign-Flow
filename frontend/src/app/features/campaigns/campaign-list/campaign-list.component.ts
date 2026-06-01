@@ -17,12 +17,13 @@ export class CampaignListComponent implements OnInit {
   private readonly repo = inject(CAMPAIGN_REPOSITORY);
   private readonly router = inject(Router);
 
-  readonly campanias = signal<Campaign[]>([]);
-  readonly cargando = signal(false);
-  readonly error = signal<string | null>(null);
+  readonly campanias    = signal<Campaign[]>([]);
+  readonly cargando     = signal(false);
+  readonly error        = signal<string | null>(null);
   readonly mostrarModal = signal(false);
-  readonly guardando = signal(false);
-  readonly exito = signal<string | null>(null);
+  readonly guardando    = signal(false);
+  readonly exito        = signal<string | null>(null);
+  readonly importando   = signal(false);
 
   readonly form = signal({ name: '', description: '' });
 
@@ -87,6 +88,49 @@ export class CampaignListComponent implements OnInit {
 
   abrir(id: number): void {
     this.router.navigate(['/campaigns', id]);
+  }
+
+  importarJSON(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file  = input.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        this.importando.set(true);
+        this.error.set(null);
+        const json = JSON.parse(e.target?.result as string);
+
+        // Validar estructura mínima
+        if (!json.canvas?.nodes || !json.canvas?.edges) {
+          this.error.set('El archivo no tiene un canvas válido (se esperan nodes y edges)');
+          return;
+        }
+
+        // Crear campaña con el nombre del JSON o uno por defecto
+        const nueva = await this.repo.crear({
+          name: json.nombre ?? `Importada ${new Date().toLocaleDateString()}`,
+          description: json.descripcion,
+        });
+
+        // Guardar canvas
+        await this.repo.guardarCanvas(nueva.id, {
+          nodes: json.canvas.nodes,
+          edges: json.canvas.edges,
+        });
+
+        this.exito.set(`Campaña "${nueva.name}" importada correctamente`);
+        await this.cargar();
+        setTimeout(() => this.exito.set(null), 3000);
+      } catch {
+        this.error.set('Error al importar: verifica que el archivo sea un JSON válido exportado desde esta aplicación');
+      } finally {
+        this.importando.set(false);
+        input.value = '';
+      }
+    };
+    reader.readAsText(file);
   }
 
   async eliminar(event: Event, id: number): Promise<void> {

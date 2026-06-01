@@ -404,6 +404,32 @@ export class CampaignEditorComponent implements OnInit {
       : resolverVariablesEjemplo(mensaje);
   }
 
+  exportarCanvas(): void {
+    const camp = this.campania();
+    if (!camp) return;
+    const payload = {
+      version: '1.0',
+      nombre: camp.name,
+      descripcion: camp.description,
+      exportado: new Date().toISOString(),
+      canvas: {
+        nodes: this.nodos().map(n => ({
+          ...n,
+          x: this.posiciones.get(n.id)?.x ?? n.x,
+          y: this.posiciones.get(n.id)?.y ?? n.y,
+        })),
+        edges: this.aristas(),
+      },
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `campaña-${camp.name.replace(/\s+/g, '-').toLowerCase()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async guardarNombreCamp(nombre: string, descripcion = ''): Promise<void> {
     this.editandoNombre.set(false);
     const camp = this.campania();
