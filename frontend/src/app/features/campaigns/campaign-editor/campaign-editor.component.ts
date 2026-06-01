@@ -52,6 +52,7 @@ export class CampaignEditorComponent implements OnInit {
   readonly nodoActivo        = signal<CanvasNode | null>(null);
   readonly guardando         = signal(false);
   readonly error             = signal<string | null>(null);
+  readonly exito             = signal<string | null>(null);
   readonly audiencia         = signal<AudienceResult | null>(null);
   readonly cargandoAudiencia = signal(false);
 
@@ -173,6 +174,8 @@ export class CampaignEditorComponent implements OnInit {
         nodes: nodosActualizados,
         edges: this.aristas(),
       });
+      this.exito.set('Canvas guardado correctamente');
+      setTimeout(() => this.exito.set(null), 3000);
     } catch {
       this.error.set('Error al guardar el canvas');
     } finally {
