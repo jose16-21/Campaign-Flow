@@ -32,14 +32,10 @@ body {
 }
 
 .main-content {
-  display: flex;
-  flex-direction: column;
   height: calc(100vh - 56px);
   overflow: hidden;
 
-  // El host del componente enrutado debe ocupar todo el espacio disponible
-  & > * {
-    flex: 1;
-    min-height: 0;
-  }
+  // router-outlet no ocupa espacio, el componente ruteado se inserta
+  // como hermano. Cada componente define :host { display:block; height:100% }
+  router-outlet { display: none; }
 }
