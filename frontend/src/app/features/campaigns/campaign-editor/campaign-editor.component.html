@@ -1,8 +1,25 @@
 <div class="editor">
   <div class="editor__topbar">
     <button class="btn-back" (click)="volver()">← Campañas</button>
-    <h2 class="editor__title">{{ campania()?.name ?? 'Editor de campania' }}</h2>
-    @if (error()) { <span class="error-msg">{{ error() }}</span> }
+    <div class="editor__title-group">
+      <h2 class="editor__title">{{ campania()?.name ?? 'Sin nombre' }}</h2>
+      <button class="btn-edit-camp" title="Editar nombre y descripción" (click)="editandoNombre.set(true)">✎</button>
+    </div>
+    @if (error()) { <span class="status-msg status-msg--error">{{ error() }}</span> }
+    @if (exito()) { <span class="status-msg status-msg--exito">✓ {{ exito() }}</span> }
+    @if (campania()) {
+      <button
+        class="btn btn--status"
+        [class.btn--status-active]="campania()!.status === 'ACTIVE'"
+        [class.btn--status-draft]="campania()!.status === 'DRAFT'"
+        [disabled]="cambiandoEstado()"
+        (click)="toggleEstado()">
+        {{ cambiandoEstado() ? '...' : (campania()!.status === 'ACTIVE' ? '● Activa' : '○ Borrador') }}
+      </button>
+    }
+    <button class="btn btn--outline-dark" (click)="exportarCanvas()" title="Exportar canvas como JSON">
+      ↓ Exportar
+    </button>
     <button class="btn btn--primary" [disabled]="guardando()" (click)="guardar()">
       {{ guardando() ? 'Guardando...' : 'Guardar canvas' }}
     </button>
@@ -27,10 +44,12 @@
       <f-flow
         fDraggable
         (fCreateNode)="onCrearNodo($event)"
-        (fMoveNodes)="onMoverNodos($event)"
-        (fCreateConnection)="onCrearConexion($event)">
+        (fCreateConnection)="onCrearConexion($event)"
+        (fSelectionChange)="onSeleccionCambiada($event)">
 
         <f-background />
+
+        <f-connection-for-create />
 
         <f-canvas>
           @for (nodo of nodos(); track nodo.id) {
@@ -39,22 +58,39 @@
               [class.nodo--segment]="nodo.type === 'segment'"
               [class.nodo--sms]="nodo.type === 'sms'"
               [class.nodo--activo]="nodoActivo()?.id === nodo.id"
+              [class.nodo--error]="nodosConError().has(nodo.id)"
               fNode
               [fNodeId]="nodo.id"
-              [fNodePosition]="{ x: nodo.x, y: nodo.y }"
+              [fNodePosition]="getPosicion(nodo)"
+              (fNodePositionChange)="onPosicionCambiada(nodo.id, $event)"
               (click)="seleccionarNodo(nodo)">
 
-              <div class="nodo__header">
-                <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
-                <span class="nodo__type">{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</span>
-              </div>
+              <div class="nodo__drag-area" fDragHandle>
+                <div class="nodo__header">
+                  <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
+                  <span class="nodo__type">{{ nodo.name || (nodo.type === 'segment' ? 'Segmento' : 'SMS') }}</span>
+                  @if (tieneAdvertencia(nodo)) {
+                    <span class="nodo__advertencia" [title]="textoAdvertencia(nodo)">⚠</span>
+                  }
+                </div>
 
-              <div class="nodo__body" [class.nodo__body--sms]="nodo.type === 'sms'">
-                @if (nodo.type === 'segment') {
-                  {{ segmentConfig(nodo).filters?.conditions?.length ?? 0 }} filtro(s)
-                } @else {
-                  {{ truncar(smsConfig(nodo).message) }}
-                }
+                <div class="nodo__body"
+                     [class.nodo__body--sms]="nodo.type === 'sms'"
+                     [class.nodo__body--advertencia]="tieneAdvertencia(nodo)">
+                  @if (nodo.type === 'segment') {
+                    @if ((segmentConfig(nodo).filters?.conditions?.length ?? 0) === 0) {
+                      <span class="nodo__aviso">Sin filtros — configura el segmento</span>
+                    } @else {
+                      {{ segmentConfig(nodo).filters?.conditions?.length }} filtro(s)
+                    }
+                  } @else {
+                    @if (!smsConfig(nodo).message.trim().length) {
+                      <span class="nodo__aviso">Mensaje vacío</span>
+                    } @else {
+                      {{ truncar(smsConfig(nodo).message) }}
+                    }
+                  }
+                </div>
               </div>
 
               <div class="nodo__connectors">
@@ -65,7 +101,7 @@
           }
         </f-canvas>
 
-        @for (arista of aristas(); track arista.source + arista.target) {
+        @for (arista of aristas(); track (arista.source ?? '') + '-' + (arista.target ?? '')) {
           <f-connection
             [fOutputId]="arista.source + '_out'"
             [fInputId]="arista.target + '_in'">
@@ -75,14 +111,48 @@
     </div>
 
     <!-- Panel de configuración -->
+    <!-- Panel de conexiones — visible cuando no hay nodo activo -->
+    @if (!nodoActivo() && aristas().length > 0) {
+      <aside class="config-panel config-panel--conexiones" #conexionesPanel>
+        <div class="config-panel__resizer" (mousedown)="iniciarResize($event, conexionesPanel)"></div>
+        <div class="config-panel__header">
+          <h3>Conexiones</h3>
+        </div>
+        <div class="config-panel__body">
+          @for (arista of aristas(); track arista.source + '-' + arista.target) {
+            <div class="conexion-item">
+              <span class="conexion-item__label">
+                {{ etiquetaNodo(arista.source) }} → {{ etiquetaNodo(arista.target) }}
+              </span>
+              <button class="btn-delete" title="Eliminar conexión"
+                (click)="eliminarArista(arista.source, arista.target)">🗑</button>
+            </div>
+          }
+        </div>
+      </aside>
+    }
+
     @if (nodoActivo(); as nodo) {
-      <aside class="config-panel">
+      <aside class="config-panel" #configPanel>
+        <div class="config-panel__resizer" (mousedown)="iniciarResize($event, configPanel)"></div>
         <div class="config-panel__header">
           <h3>{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</h3>
+          <button class="btn-delete" title="Eliminar nodo" (click)="eliminarNodoActivo()">🗑</button>
           <button class="btn-close" (click)="nodoActivo.set(null)">✕</button>
         </div>
 
         <div class="config-panel__body">
+          <!-- Nombre del nodo -->
+          <div class="nombre-nodo">
+            <p class="config-label">Nombre</p>
+            <input
+              type="text"
+              class="nombre-nodo__input"
+              [placeholder]="nodo.type === 'segment' ? 'Ej. Clientes GT activos' : 'Ej. Mensaje bienvenida'"
+              [value]="nodo.name ?? ''"
+              (input)="actualizarNombre($any($event.target).value)" />
+          </div>
+
           @if (nodo.type === 'segment') {
             <p class="config-label">Filtros</p>
             <app-filter-builder
@@ -111,19 +181,72 @@
 
           @if (nodo.type === 'sms') {
             <p class="config-label">Mensaje</p>
+
+            <!-- Variables disponibles -->
+            <div class="variables-chips">
+              @for (v of variablesDisponibles; track v.token) {
+                <button class="chip" (click)="insertarVariable(v.token)" [title]="v.etiqueta">
+                  {{ v.token }}
+                </button>
+              }
+            </div>
+
             <textarea
               class="sms-textarea"
               [class.sms-textarea--error]="superaLimiteSms"
               [value]="smsConfig(nodo).message"
               (input)="actualizarMensaje($any($event.target).value)"
-              placeholder="Escribe el mensaje SMS...">
+              placeholder="Hola {{'{{name}}'}}, tu plan es {{'{{plan}}'}}..."
+              #smsTextarea>
             </textarea>
             <p class="sms-contador" [class.sms-contador--error]="superaLimiteSms">
               {{ contadorSms }}
             </p>
+
+            <!-- Preview con variables resueltas -->
+            @if (smsConfig(nodo).message.includes('{{')) {
+              <div class="sms-preview">
+                <p class="config-label">Preview</p>
+                <p class="sms-preview__texto">{{ previewMensaje(smsConfig(nodo).message) }}</p>
+              </div>
+            }
           }
         </div>
       </aside>
     }
   </div>
 </div>
+
+<!-- Modal editar campaña -->
+@if (editandoNombre()) {
+  <div class="modal-overlay" (click)="editandoNombre.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h3>Editar campaña</h3>
+        <button class="modal__close" (click)="editandoNombre.set(false)">✕</button>
+      </div>
+      <div class="modal__body">
+        <div class="field">
+          <label class="field__label">Nombre</label>
+          <input #campNombre type="text" class="field__input"
+            [value]="campania()?.name ?? ''"
+            (keydown.enter)="guardarNombreCamp(campNombre.value, campDesc.value)"
+            (keydown.escape)="editandoNombre.set(false)" />
+        </div>
+        <div class="field">
+          <label class="field__label">Descripción</label>
+          <textarea #campDesc class="field__input field__input--textarea"
+            [value]="campania()?.description ?? ''"
+            rows="3"
+            (keydown.escape)="editandoNombre.set(false)"></textarea>
+        </div>
+      </div>
+      <div class="modal__footer">
+        <button class="btn btn--ghost" (click)="editandoNombre.set(false)">Cancelar</button>
+        <button class="btn btn--primary" (click)="guardarNombreCamp(campNombre.value, campDesc.value)">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+}
