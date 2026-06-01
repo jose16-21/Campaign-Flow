@@ -98,6 +98,7 @@
   f-flow {
     width: 100%;
     height: 100%;
+    display: block;
   }
 }
 
@@ -106,12 +107,21 @@
   border: 2px solid #e0e0e0;
   border-radius: 8px;
   min-width: 160px;
-  cursor: pointer;
+  cursor: grab;
   position: relative;
+  touch-action: none;
+  user-select: none;
+
+  &:active { cursor: grabbing; }
 
   &--segment { border-color: #1a1a2e; }
   &--sms { border-color: #e57c00; }
   &--activo { box-shadow: 0 0 0 2px #4a90e2; }
+
+  &__drag-area {
+    cursor: grab;
+    &:active { cursor: grabbing; }
+  }
 
   &__header {
     display: flex;
@@ -167,13 +177,28 @@
 }
 
 .config-panel {
-  width: 280px;
+  width: 360px;
+  min-width: 280px;
+  max-width: 600px;
   background: #fff;
   border-left: 1px solid #e0e0e0;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
+  position: relative;
+
+  &__resizer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    z-index: 10;
+    &:hover { background: rgba(26,26,46,.15); }
+  }
 
   &__header {
     display: flex;
