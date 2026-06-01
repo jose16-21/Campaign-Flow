@@ -53,13 +53,26 @@
                 <div class="nodo__header">
                   <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
                   <span class="nodo__type">{{ nodo.name || (nodo.type === 'segment' ? 'Segmento' : 'SMS') }}</span>
+                  @if (tieneAdvertencia(nodo)) {
+                    <span class="nodo__advertencia" [title]="textoAdvertencia(nodo)">⚠</span>
+                  }
                 </div>
 
-                <div class="nodo__body" [class.nodo__body--sms]="nodo.type === 'sms'">
+                <div class="nodo__body"
+                     [class.nodo__body--sms]="nodo.type === 'sms'"
+                     [class.nodo__body--advertencia]="tieneAdvertencia(nodo)">
                   @if (nodo.type === 'segment') {
-                    {{ segmentConfig(nodo).filters?.conditions?.length ?? 0 }} filtro(s)
+                    @if ((segmentConfig(nodo).filters?.conditions?.length ?? 0) === 0) {
+                      <span class="nodo__aviso">Sin filtros — configura el segmento</span>
+                    } @else {
+                      {{ segmentConfig(nodo).filters?.conditions?.length }} filtro(s)
+                    }
                   } @else {
-                    {{ truncar(smsConfig(nodo).message) }}
+                    @if (!smsConfig(nodo).message?.trim()?.length) {
+                      <span class="nodo__aviso">Mensaje vacío</span>
+                    } @else {
+                      {{ truncar(smsConfig(nodo).message) }}
+                    }
                   }
                 </div>
               </div>

@@ -295,6 +295,22 @@ export class CampaignEditorComponent implements OnInit {
     }
   }
 
+  tieneAdvertencia(nodo: CanvasNode): boolean {
+    if (nodo.type === 'sms') {
+      return !this.smsConfig(nodo).message?.trim();
+    }
+    if (nodo.type === 'segment') {
+      return !(this.segmentConfig(nodo).filters?.conditions?.length);
+    }
+    return false;
+  }
+
+  textoAdvertencia(nodo: CanvasNode): string {
+    if (nodo.type === 'sms') return 'Mensaje vacío';
+    if (nodo.type === 'segment') return 'Sin filtros configurados';
+    return '';
+  }
+
   etiquetaNodo(id: string): string {
     const nodo = this.nodos().find(n => n.id === id);
     if (!nodo) return id;
