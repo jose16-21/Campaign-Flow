@@ -1,0 +1,162 @@
+:host { display: contents; }
+
+// ────────────────────────────────────────────────────────
+// Panel derecho de configuración
+// ────────────────────────────────────────────────────────
+.config-panel {
+  width: 360px; min-width: 280px; max-width: 600px;
+  background: #fff; border-left: 1px solid #e0e0e0;
+  display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; position: relative;
+
+  &__resizer {
+    position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    cursor: col-resize; background: transparent; z-index: 10;
+    &:hover { background: rgba(26,26,46,.15); }
+  }
+
+  &__header {
+    display: flex; align-items: center; padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
+    h3 { flex: 1; font-size: 14px; font-weight: 600; }
+  }
+
+  &__body {
+    padding: 16px; overflow-y: auto; flex: 1;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+}
+
+.config-panel__icono { font-size: 16px; margin-right: 4px; line-height: 1; }
+
+.config-label {
+  font-size: 11px; text-transform: uppercase; color: #999; font-weight: 600; margin: 0;
+}
+
+.config-hint {
+  font-size: 10px; color: #bbb; font-style: italic; margin: 0;
+}
+
+.config-hint-inline {
+  font-weight: 400; color: #bbb; font-size: 10px; text-transform: none;
+}
+
+.nombre-nodo {
+  display: flex; flex-direction: column; gap: 5px;
+  &__input {
+    padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 13px; font-family: inherit; width: 100%; box-sizing: border-box;
+    &:focus { outline: none; border-color: #1a1a2e; }
+  }
+}
+
+.audiencia {
+  background: #f8f8ff; border-radius: 6px; padding: 10px;
+  &__total { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+  &__item { font-size: 12px; padding: 4px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 2px; }
+  &__email { color: #999; font-size: 11px; }
+}
+
+.variables-chips {
+  display: flex; flex-wrap: wrap; gap: 4px;
+}
+
+.chip {
+  padding: 2px 8px; border: 1px solid #e57c00; border-radius: 12px;
+  background: #fff8f0; color: #e57c00; font-size: 11px; font-family: monospace;
+  cursor: pointer; white-space: nowrap;
+  &:hover { background: #ffe0b2; }
+  &--wp { border-color: #25d366; background: #f0fdf4; color: #1a8a47; &:hover { background: #dcfce7; } }
+}
+
+.sms-preview {
+  background: #f8f8ff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 10px;
+  &__texto { font-size: 12px; color: #444; line-height: 1.5; white-space: pre-wrap; }
+}
+
+.panel-textarea {
+  width: 100%; min-height: 80px; padding: 7px 10px;
+  border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit;
+  resize: vertical; box-sizing: border-box;
+  &:focus { outline: none; border-color: #7c3aed; }
+}
+
+.panel-counter {
+  font-size: 11px; color: #888; text-align: right; margin: 2px 0 6px;
+  &--over { color: #c62828; font-weight: 600; }
+}
+
+.panel-tipo-wp {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+}
+.panel-tipo-btn {
+  padding: 5px 10px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f8f8f8; font-size: 12px; cursor: pointer; transition: all .15s;
+  &:hover { border-color: #1a8a47; background: #f0fdf4; }
+  &--activo { background: #1a8a47; color: #fff; border-color: #1a8a47; font-weight: 600; }
+}
+
+.panel-branch-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  input { flex: 1; }
+}
+
+.panel-branch-select {
+  font-size: 12px; margin-bottom: 8px; color: #1a8a47; width: 100%;
+  padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit;
+  box-sizing: border-box;
+  option[value=""] { color: #aaa; }
+}
+
+.panel-media-tipos {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.panel-media-btn {
+  flex: 1; padding: 6px 4px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f8f8f8; font-size: 12px; cursor: pointer; text-align: center;
+  &:hover { border-color: #b45309; }
+  &--activo { background: #fffbeb; border-color: #b45309; color: #b45309; font-weight: 600; }
+}
+
+.panel-ticket-tipos {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.panel-ticket-btn {
+  flex: 1; padding: 8px 6px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f8f8f8; font-size: 13px; cursor: pointer; text-align: center;
+  &:hover { border-color: #b91c1c; }
+  &--activo { background: #fff1f2; border-color: #b91c1c; color: #b91c1c; font-weight: 600; }
+}
+
+.panel-info {
+  background: #f8f8ff; border: 1px solid #e8e8ff; border-radius: 8px; padding: 10px 12px;
+  font-size: 12px; color: #444; line-height: 1.7;
+  p { margin: 0; }
+}
+
+// ── Buttons ───────────────────────────────────────────────
+.btn {
+  padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 500;
+  &--secondary { background: #f0f0f0; color: #1a1a2e; &:hover { background: #e0e0e0; } &:disabled { opacity: .5; cursor: not-allowed; } }
+  &--full      { width: 100%; }
+  &--ghost     { background: #fff; border: 1px solid #ddd; color: #555; border-radius: 6px; &:hover { background: #f5f5f5; } }
+  &--sm        { padding: 4px 10px; font-size: 12px; }
+}
+
+.btn-close {
+  background: none; border: none; cursor: pointer; color: #999; font-size: 16px;
+  &:hover { color: #333; }
+}
+
+.btn-delete {
+  background: none; border: none; cursor: pointer; font-size: 14px;
+  padding: 2px 4px; border-radius: 4px; opacity: .6;
+  &:hover { opacity: 1; background: #fff0f0; }
+}
+
+.btn-delete--sm {
+  background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; padding: 0 4px;
+  &:hover { color: #c62828; }
+}
+
+.btn--sm { padding: 4px 10px; font-size: 12px; }
