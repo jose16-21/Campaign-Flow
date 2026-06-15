@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ListCampaignsUseCase } from '../../../application/use-cases/campaigns/list-campaigns.use-case';
 import { CAMPAIGN_REPOSITORY } from '../../../infrastructure/tokens/repository.tokens';
 import type { Campaign } from '../../../domain/models/campaign.model';
+import { LOCALES_DISPONIBLES } from '../../../domain/models/campaign.model';
 
 @Component({
   selector: 'app-campaign-list',
@@ -25,7 +26,8 @@ export class CampaignListComponent implements OnInit {
   readonly exito        = signal<string | null>(null);
   readonly importando   = signal(false);
 
-  readonly form = signal({ name: '', description: '' });
+  readonly form = signal({ name: '', description: '', locale: 'es' });
+  readonly locales = LOCALES_DISPONIBLES;
 
   async ngOnInit(): Promise<void> {
     await this.cargar();
@@ -44,7 +46,7 @@ export class CampaignListComponent implements OnInit {
   }
 
   abrirModal(): void {
-    this.form.set({ name: '', description: '' });
+    this.form.set({ name: '', description: '', locale: 'es' });
     this.error.set(null);
     this.mostrarModal.set(true);
   }
@@ -61,8 +63,12 @@ export class CampaignListComponent implements OnInit {
     this.form.update(f => ({ ...f, description: value }));
   }
 
+  setLocale(value: string): void {
+    this.form.update(f => ({ ...f, locale: value }));
+  }
+
   async confirmarCrear(): Promise<void> {
-    const { name, description } = this.form();
+    const { name, description, locale } = this.form();
     if (!name.trim()) return;
 
     this.guardando.set(true);
@@ -71,6 +77,7 @@ export class CampaignListComponent implements OnInit {
       const nueva = await this.repo.crear({
         name: name.trim(),
         description: description.trim() || undefined,
+        locale,
       });
       this.mostrarModal.set(false);
       this.exito.set(`Campaña "${nueva.name}" creada. Abriendo editor...`);

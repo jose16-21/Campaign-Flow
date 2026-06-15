@@ -25,8 +25,10 @@ import type {
   SegmentNodeConfig,
   SmsNodeConfig,
   EmailNodeConfig,
+  WhatsappNodeConfig,
+  WhatsappTipo,
 } from '../../../domain/models/campaign.model';
-import { TIPOS_ACCION } from '../../../domain/models/campaign.model';
+import { TIPOS_ACCION, ICONO_NODO, LABEL_NODO, LOCALES_DISPONIBLES } from '../../../domain/models/campaign.model';
 import type { FilterGroup }    from '../../../domain/models/filter-tree.model';
 import type { AudienceResult } from '../../../domain/models/audience.model';
 import type { Contact }        from '../../../domain/models/contact.model';
@@ -36,12 +38,13 @@ import {
   resolverVariablesEjemplo,
 } from '../../../domain/models/sms-variables.model';
 
-type PaletteItem = { type: 'segment' | 'sms' | 'email'; label: string; icon: string };
+type PaletteItem = { type: 'segment' | 'sms' | 'email' | 'whatsapp'; label: string; icon: string };
 
 const PALETA: PaletteItem[] = [
-  { type: 'segment', label: 'Segmento', icon: 'S' },
-  { type: 'sms',     label: 'SMS',      icon: 'M' },
-  { type: 'email',   label: 'Email',    icon: 'E' },
+  { type: 'segment',  label: 'Segmento',  icon: ICONO_NODO.segment  },
+  { type: 'sms',      label: 'SMS',       icon: ICONO_NODO.sms      },
+  { type: 'email',    label: 'Email',     icon: ICONO_NODO.email    },
+  { type: 'whatsapp', label: 'WhatsApp',  icon: ICONO_NODO.whatsapp },
 ];
 
 @Component({
@@ -75,6 +78,9 @@ export class CampaignEditorComponent implements OnInit {
 
   readonly paleta              = PALETA;
   readonly variablesDisponibles = SMS_VARIABLES;
+  readonly iconoNodo           = ICONO_NODO;
+  readonly labelNodo           = LABEL_NODO;
+  readonly locales             = LOCALES_DISPONIBLES;
   private nextId = 1;
   private smsTextareaRef: HTMLTextAreaElement | null = null;
 
@@ -121,12 +127,14 @@ export class CampaignEditorComponent implements OnInit {
     if (!evento.data) return;
     const id  = `node-${this.nextId++}`;
     const pos = evento.dropPosition ?? { x: 200, y: 200 };
-    const config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig =
+    const config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig =
       evento.data.type === 'segment'
         ? { filters: { op: 'AND', conditions: [] } }
         : evento.data.type === 'email'
           ? { subject: '', body: '' }
-          : { message: '' };
+          : evento.data.type === 'whatsapp'
+            ? { tipo: 'texto', mensaje: '', templateNombre: '', templateParams: [] }
+            : { message: '' };
 
     this.posiciones.set(id, pos);
     this.nodos.update(n => [
@@ -170,7 +178,7 @@ export class CampaignEditorComponent implements OnInit {
     this.conexionesSeleccionadas.set([]); // limpiar selección de conexión al abrir panel
   }
 
-  actualizarConfig(config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig): void {
+  actualizarConfig(config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig): void {
     const activo = this.nodoActivo();
     if (!activo) return;
     const actualizado = { ...activo, config };
@@ -260,8 +268,12 @@ export class CampaignEditorComponent implements OnInit {
 
   private etiquetaAccion(nodo: CanvasNode): string {
     if (nodo.name) return nodo.name;
-    if (nodo.type === 'sms') return this.truncar(this.smsConfig(nodo).message);
-    if (nodo.type === 'email') return this.emailConfig(nodo).subject || 'Sin asunto';
+    if (nodo.type === 'sms')      return this.truncar(this.smsConfig(nodo).message);
+    if (nodo.type === 'email')    return this.emailConfig(nodo).subject || 'Sin asunto';
+    if (nodo.type === 'whatsapp') {
+      const c = this.whatsappConfig(nodo);
+      return c.tipo === 'texto' ? this.truncar(c.mensaje) : c.templateNombre || 'Sin template';
+    }
     return nodo.id;
   }
 
@@ -332,6 +344,10 @@ export class CampaignEditorComponent implements OnInit {
       const c = this.emailConfig(nodo);
       return !c.subject?.trim() || !c.body?.trim();
     }
+    if (nodo.type === 'whatsapp') {
+      const c = this.whatsappConfig(nodo);
+      return c.tipo === 'texto' ? !c.mensaje?.trim() : !c.templateNombre?.trim();
+    }
     if (nodo.type === 'segment') return !(this.segmentConfig(nodo).filters?.conditions?.length);
     return false;
   }
@@ -344,6 +360,10 @@ export class CampaignEditorComponent implements OnInit {
       if (!c.subject?.trim()) return 'Asunto vacío';
       return 'Cuerpo vacío';
     }
+    if (nodo.type === 'whatsapp') {
+      const c = this.whatsappConfig(nodo);
+      return c.tipo === 'texto' ? 'Mensaje vacío' : 'Nombre de template vacío';
+    }
     if (nodo.type === 'segment') return 'Sin filtros configurados';
     return '';
   }
@@ -352,9 +372,13 @@ export class CampaignEditorComponent implements OnInit {
     const nodo = this.nodos().find(n => n.id === id);
     if (!nodo) return id;
     if (nodo.name) return nodo.name;
-    if (nodo.type === 'segment') return 'Segmento';
-    if (nodo.type === 'sms') return `SMS "${this.truncar(this.smsConfig(nodo).message)}"`;
-    if (nodo.type === 'email') return `Email "${this.truncar(this.emailConfig(nodo).subject)}"`;
+    if (nodo.type === 'segment')  return 'Segmento';
+    if (nodo.type === 'sms')      return `SMS "${this.truncar(this.smsConfig(nodo).message)}"`;
+    if (nodo.type === 'email')    return `Email "${this.truncar(this.emailConfig(nodo).subject)}"`;
+    if (nodo.type === 'whatsapp') {
+      const c = this.whatsappConfig(nodo);
+      return `WP "${this.truncar(c.tipo === 'texto' ? c.mensaje : c.templateNombre)}"`;
+    }
     return id;
   }
 
@@ -445,7 +469,7 @@ export class CampaignEditorComponent implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  async guardarNombreCamp(nombre: string, descripcion = ''): Promise<void> {
+  async guardarNombreCamp(nombre: string, descripcion = '', locale?: string): Promise<void> {
     this.editandoNombre.set(false);
     const camp = this.campania();
     if (!camp || !nombre.trim()) return;
@@ -453,6 +477,7 @@ export class CampaignEditorComponent implements OnInit {
       const actualizada = await this.campañaRepo.actualizar(camp.id, {
         name: nombre.trim(),
         description: descripcion.trim() || undefined,
+        locale: locale ?? camp.locale,
       });
       this.campania.set(actualizada);
     } catch {
@@ -509,6 +534,35 @@ export class CampaignEditorComponent implements OnInit {
 
   emailConfig(nodo: CanvasNode): EmailNodeConfig {
     return (nodo.config ?? { subject: '', body: '' }) as EmailNodeConfig;
+  }
+
+  whatsappConfig(nodo: CanvasNode): WhatsappNodeConfig {
+    return (nodo.config ?? { tipo: 'texto', mensaje: '', templateNombre: '', templateParams: [] }) as WhatsappNodeConfig;
+  }
+
+  actualizarTipoWp(tipo: WhatsappTipo): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    this.actualizarConfig({ ...this.whatsappConfig(activo), tipo } as WhatsappNodeConfig);
+  }
+
+  actualizarMensajeWp(mensaje: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    this.actualizarConfig({ ...this.whatsappConfig(activo), mensaje } as WhatsappNodeConfig);
+  }
+
+  actualizarTemplateNombre(templateNombre: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    this.actualizarConfig({ ...this.whatsappConfig(activo), templateNombre } as WhatsappNodeConfig);
+  }
+
+  actualizarTemplateParams(raw: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const templateParams = raw.split('\n').map(p => p.trim()).filter(Boolean);
+    this.actualizarConfig({ ...this.whatsappConfig(activo), templateParams } as WhatsappNodeConfig);
   }
 
   actualizarAsunto(asunto: string): void {

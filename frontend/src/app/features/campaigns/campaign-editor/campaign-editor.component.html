@@ -3,6 +3,9 @@
     <button class="btn-back" (click)="volver()">← Campañas</button>
     <div class="editor__title-group">
       <h2 class="editor__title">{{ campania()?.name ?? 'Sin nombre' }}</h2>
+      @if (campania()?.locale) {
+        <span class="badge-locale" title="Idioma de la campaña">{{ campania()!.locale.toUpperCase() }}</span>
+      }
       <button class="btn-edit-camp" title="Editar nombre y descripción" (click)="editandoNombre.set(true)">✎</button>
     </div>
     @if (error()) { <span class="status-msg status-msg--error">{{ error() }}</span> }
@@ -33,7 +36,8 @@
         <div class="palette__item" fExternalItem [fData]="item">
           <span class="palette__icon"
             [class.palette__icon--sms]="item.type === 'sms'"
-            [class.palette__icon--email]="item.type === 'email'">
+            [class.palette__icon--email]="item.type === 'email'"
+            [class.palette__icon--whatsapp]="item.type === 'whatsapp'">
             {{ item.icon }}
           </span>
           <span>{{ item.label }}</span>
@@ -50,7 +54,6 @@
         (fSelectionChange)="onSeleccionCambiada($event)">
 
         <f-background />
-
         <f-connection-for-create />
 
         <f-canvas>
@@ -60,6 +63,7 @@
               [class.nodo--segment]="nodo.type === 'segment'"
               [class.nodo--sms]="nodo.type === 'sms'"
               [class.nodo--email]="nodo.type === 'email'"
+              [class.nodo--whatsapp]="nodo.type === 'whatsapp'"
               [class.nodo--activo]="nodoActivo()?.id === nodo.id"
               [class.nodo--error]="nodosConError().has(nodo.id)"
               fNode
@@ -72,10 +76,11 @@
                 <div class="nodo__header">
                   <span class="nodo__icon"
                     [class.nodo__icon--sms]="nodo.type === 'sms'"
-                    [class.nodo__icon--email]="nodo.type === 'email'">
-                    {{ nodo.type === 'segment' ? 'S' : nodo.type === 'sms' ? 'M' : 'E' }}
+                    [class.nodo__icon--email]="nodo.type === 'email'"
+                    [class.nodo__icon--whatsapp]="nodo.type === 'whatsapp'">
+                    {{ iconoNodo[nodo.type] }}
                   </span>
-                  <span class="nodo__type">{{ nodo.name || (nodo.type === 'segment' ? 'Segmento' : nodo.type === 'sms' ? 'SMS' : 'Email') }}</span>
+                  <span class="nodo__type">{{ nodo.name || labelNodo[nodo.type] }}</span>
                   @if (tieneAdvertencia(nodo)) {
                     <span class="nodo__advertencia" [title]="textoAdvertencia(nodo)">⚠</span>
                   }
@@ -84,6 +89,7 @@
                 <div class="nodo__body"
                      [class.nodo__body--sms]="nodo.type === 'sms'"
                      [class.nodo__body--email]="nodo.type === 'email'"
+                     [class.nodo__body--whatsapp]="nodo.type === 'whatsapp'"
                      [class.nodo__body--advertencia]="tieneAdvertencia(nodo)">
                   @if (nodo.type === 'segment') {
                     @if ((segmentConfig(nodo).filters?.conditions?.length ?? 0) === 0) {
@@ -102,6 +108,20 @@
                       <span class="nodo__aviso">Sin asunto</span>
                     } @else {
                       {{ truncar(emailConfig(nodo).subject) }}
+                    }
+                  } @else if (nodo.type === 'whatsapp') {
+                    @if (whatsappConfig(nodo).tipo === 'texto') {
+                      @if (!whatsappConfig(nodo).mensaje.trim().length) {
+                        <span class="nodo__aviso">Mensaje vacío</span>
+                      } @else {
+                        {{ truncar(whatsappConfig(nodo).mensaje) }}
+                      }
+                    } @else {
+                      @if (!whatsappConfig(nodo).templateNombre.trim().length) {
+                        <span class="nodo__aviso">Sin template</span>
+                      } @else {
+                        Template: {{ whatsappConfig(nodo).templateNombre }}
+                      }
                     }
                   }
                 </div>
@@ -124,7 +144,6 @@
       </f-flow>
     </div>
 
-    <!-- Panel de configuración -->
     <!-- Panel de conexiones — visible cuando no hay nodo activo -->
     @if (!nodoActivo() && aristas().length > 0) {
       <aside class="config-panel config-panel--conexiones" #conexionesPanel>
@@ -146,11 +165,13 @@
       </aside>
     }
 
+    <!-- Panel de configuración del nodo activo -->
     @if (nodoActivo(); as nodo) {
       <aside class="config-panel" #configPanel>
         <div class="config-panel__resizer" (mousedown)="iniciarResize($event, configPanel)"></div>
         <div class="config-panel__header">
-          <h3>{{ nodo.type === 'segment' ? 'Segmento' : nodo.type === 'sms' ? 'SMS' : 'Email' }}</h3>
+          <span class="config-panel__icono">{{ iconoNodo[nodo.type] }}</span>
+          <h3>{{ labelNodo[nodo.type] }}</h3>
           <button class="btn-delete" title="Eliminar nodo" (click)="eliminarNodoActivo()">🗑</button>
           <button class="btn-close" (click)="nodoActivo.set(null)">✕</button>
         </div>
@@ -162,11 +183,12 @@
             <input
               type="text"
               class="nombre-nodo__input"
-              [placeholder]="nodo.type === 'segment' ? 'Ej. Clientes GT activos' : 'Ej. Mensaje bienvenida'"
+              [placeholder]="nodo.type === 'segment' ? 'Ej. Clientes GT activos' : 'Ej. Bienvenida premium'"
               [value]="nodo.name ?? ''"
               (input)="actualizarNombre($any($event.target).value)" />
           </div>
 
+          <!-- Segmento -->
           @if (nodo.type === 'segment') {
             <p class="config-label">Filtros</p>
             <app-filter-builder
@@ -193,9 +215,9 @@
             }
           }
 
+          <!-- SMS -->
           @if (nodo.type === 'sms') {
             <p class="config-label">Mensaje</p>
-
             <div class="variables-chips">
               @for (v of variablesDisponibles; track v.token) {
                 <button class="chip" (click)="insertarVariable(v.token)" [title]="v.etiqueta">
@@ -203,19 +225,16 @@
                 </button>
               }
             </div>
-
             <textarea
               class="sms-textarea"
               [class.sms-textarea--error]="superaLimiteSms"
               [value]="smsConfig(nodo).message"
               (input)="actualizarMensaje($any($event.target).value)"
-              placeholder="Hola {{'{{name}}'}}, tu plan es {{'{{plan}}'}}..."
-              #smsTextarea>
+              placeholder="Hola {{'{{name}}'}}, tu plan es {{'{{plan}}'}}...">
             </textarea>
             <p class="sms-contador" [class.sms-contador--error]="superaLimiteSms">
               {{ contadorSms }}
             </p>
-
             @if (smsConfig(nodo).message.includes('{{')) {
               <div class="sms-preview">
                 <p class="config-label">Preview</p>
@@ -224,6 +243,7 @@
             }
           }
 
+          <!-- Email -->
           @if (nodo.type === 'email') {
             <p class="config-label">Asunto</p>
             <div class="variables-chips">
@@ -254,12 +274,81 @@
               (input)="actualizarCuerpo($any($event.target).value)"
               placeholder="Estimado/a {{'{{'}}name{{'}}'}}, te escribimos para...">
             </textarea>
-
             @if (emailConfig(nodo).subject.includes('{{') || emailConfig(nodo).body.includes('{{')) {
               <div class="sms-preview">
                 <p class="config-label">Preview asunto</p>
                 <p class="sms-preview__texto">{{ previewMensaje(emailConfig(nodo).subject) }}</p>
               </div>
+            }
+          }
+
+          <!-- WhatsApp -->
+          @if (nodo.type === 'whatsapp') {
+            <div class="wp-tipo-toggle">
+              <button
+                class="wp-tipo-btn"
+                [class.wp-tipo-btn--activo]="whatsappConfig(nodo).tipo === 'texto'"
+                (click)="actualizarTipoWp('texto')">
+                💬 Texto libre
+              </button>
+              <button
+                class="wp-tipo-btn"
+                [class.wp-tipo-btn--activo]="whatsappConfig(nodo).tipo === 'template'"
+                (click)="actualizarTipoWp('template')">
+                📋 Template
+              </button>
+            </div>
+
+            @if (whatsappConfig(nodo).tipo === 'texto') {
+              <p class="config-label">Mensaje</p>
+              <div class="variables-chips">
+                @for (v of variablesDisponibles; track v.token) {
+                  <button class="chip chip--wp" (click)="actualizarMensajeWp(whatsappConfig(nodo).mensaje + v.token)" [title]="v.etiqueta">
+                    {{ v.token }}
+                  </button>
+                }
+              </div>
+              <textarea
+                class="wp-textarea"
+                [value]="whatsappConfig(nodo).mensaje"
+                (input)="actualizarMensajeWp($any($event.target).value)"
+                placeholder="Hola {{'{{'}}name{{'}}'}}, tienes una oferta especial en tu plan {{'{{'}}plan{'}'}}...">
+              </textarea>
+              @if (whatsappConfig(nodo).mensaje.includes('{{')) {
+                <div class="sms-preview">
+                  <p class="config-label">Preview</p>
+                  <p class="sms-preview__texto">{{ previewMensaje(whatsappConfig(nodo).mensaje) }}</p>
+                </div>
+              }
+            }
+
+            @if (whatsappConfig(nodo).tipo === 'template') {
+              <p class="config-label">Nombre del template</p>
+              <input
+                type="text"
+                class="wp-input"
+                [value]="whatsappConfig(nodo).templateNombre"
+                (input)="actualizarTemplateNombre($any($event.target).value)"
+                placeholder="Ej. bienvenida_premium" />
+              <p class="wp-hint">Nombre exacto del template aprobado en Meta Business</p>
+
+              <p class="config-label">Parámetros <span class="wp-hint-inline">(uno por línea)</span></p>
+              <div class="variables-chips">
+                @for (v of variablesDisponibles; track v.token) {
+                  <button class="chip chip--wp"
+                    (click)="actualizarTemplateParams(whatsappConfig(nodo).templateParams.join('\n') + '\n' + v.token)"
+                    [title]="v.etiqueta">
+                    {{ v.token }}
+                  </button>
+                }
+              </div>
+              <textarea
+                class="wp-textarea"
+                [value]="whatsappConfig(nodo).templateParams.join('\n')"
+                (input)="actualizarTemplateParams($any($event.target).value)"
+                placeholder="{{'{{name}}'}}{{'&#10;'}}{{'{{'}}plan{'}'}}">
+              </textarea>
+              <p class="wp-hint">Cada línea es un parámetro: &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125;…</p>
             }
           }
         </div>
@@ -291,10 +380,18 @@
             rows="3"
             (keydown.escape)="editandoNombre.set(false)"></textarea>
         </div>
+        <div class="field">
+          <label class="field__label">Idioma</label>
+          <select #campLocale class="field__input" [value]="campania()?.locale ?? 'es'">
+            @for (l of locales; track l.code) {
+              <option [value]="l.code">{{ l.label }}</option>
+            }
+          </select>
+        </div>
       </div>
       <div class="modal__footer">
         <button class="btn btn--ghost" (click)="editandoNombre.set(false)">Cancelar</button>
-        <button class="btn btn--primary" (click)="guardarNombreCamp(campNombre.value, campDesc.value)">
+        <button class="btn btn--primary" (click)="guardarNombreCamp(campNombre.value, campDesc.value, campLocale.value)">
           Guardar
         </button>
       </div>

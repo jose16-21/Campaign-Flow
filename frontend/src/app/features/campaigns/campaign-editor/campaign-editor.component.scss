@@ -51,6 +51,17 @@
   &:hover { color: #1a1a2e; }
 }
 
+.badge-locale {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: #e8f0fe;
+  color: #1967d2;
+  border-radius: 4px;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
 .palette {
   width: 140px;
   background: #fff;
@@ -96,8 +107,9 @@
     font-weight: 700;
     flex-shrink: 0;
 
-    &--sms   { background: #e57c00; }
-    &--email { background: #1565c0; }
+    &--sms      { background: #e57c00; }
+    &--email    { background: #1565c0; }
+    &--whatsapp { background: #25d366; }
   }
 }
 
@@ -125,9 +137,10 @@
 
   &:active { cursor: grabbing; }
 
-  &--segment { border-color: #1a1a2e; }
-  &--sms     { border-color: #e57c00; }
-  &--email   { border-color: #1565c0; }
+  &--segment  { border-color: #1a1a2e; }
+  &--sms      { border-color: #e57c00; }
+  &--email    { border-color: #1565c0; }
+  &--whatsapp { border-color: #25d366; }
   &--error {
     border-color: #c62828;
     box-shadow: 0 0 0 2px rgba(198, 40, 40, .25);
@@ -149,9 +162,9 @@
   }
 
   &__icon {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
     border-radius: 50%;
     background: #1a1a2e;
     color: #fff;
@@ -159,11 +172,13 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    font-size: 10px;
+    font-size: 13px;
     font-weight: 700;
+    line-height: 1;
 
-    .nodo--sms   & { background: #e57c00; }
-    .nodo--email & { background: #1565c0; }
+    .nodo--sms      & { background: #e57c00; }
+    .nodo--email    & { background: #1565c0; }
+    .nodo--whatsapp & { background: #25d366; }
   }
 
   &__type { font-size: 12px; font-weight: 600; flex: 1; }
@@ -183,6 +198,7 @@
 
     &--sms        { font-style: italic; }
     &--email      { font-style: italic; color: #1565c0; }
+    &--whatsapp   { font-style: italic; color: #1a8a47; }
     &--advertencia { color: #e57c00; font-style: italic; }
   }
 
@@ -261,6 +277,83 @@
   color: #999;
   font-weight: 600;
 }
+
+.config-panel__icono {
+  font-size: 16px;
+  margin-right: 4px;
+  line-height: 1;
+}
+
+.wp-tipo-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.wp-tipo-btn {
+  flex: 1;
+  padding: 7px 10px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  color: #666;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+
+  &:hover { border-color: #25d366; color: #1a8a47; }
+
+  &--activo {
+    border-color: #25d366;
+    background: #f0fdf4;
+    color: #1a8a47;
+    font-weight: 600;
+  }
+}
+
+.wp-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  &:focus { outline: none; border-color: #25d366; }
+}
+
+.wp-textarea {
+  width: 100%;
+  min-height: 110px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  &:focus { outline: none; border-color: #25d366; }
+}
+
+.wp-hint {
+  font-size: 11px;
+  color: #999;
+  margin-top: -6px;
+}
+
+.wp-hint-inline {
+  font-weight: 400;
+  color: #bbb;
+  font-size: 10px;
+  text-transform: none;
+}
+
+.chip--wp {
+  border-color: #25d366;
+  background: #f0fdf4;
+  color: #1a8a47;
+  &:hover { background: #dcfce7; }
+}
+
+.palette__icon--whatsapp { background: #25d366; }
 
 .email-input {
   width: 100%;
