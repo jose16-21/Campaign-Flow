@@ -1,7 +1,9 @@
 import { ErrorHandler, Injectable } from '@angular/core';
 
 // Errores internos de @foblex/flow que no afectan la funcionalidad
-const ERRORES_IGNORADOS = ['Unknown container'];
+// "Output not found" / "Input not found": error transitorio durante drag —
+// foblex re-registra los puertos en el siguiente ciclo y las conexiones quedan bien.
+const ERRORES_IGNORADOS = ['Unknown container', 'Output not found', 'Input not found'];
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
