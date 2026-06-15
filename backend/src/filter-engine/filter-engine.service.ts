@@ -18,6 +18,8 @@ const CAMPOS_DIRECTOS = new Set([
   'created_at',
 ]);
 
+const OPERADORES_SIN_VALOR = new Set(['is_empty', 'is_not_empty']);
+
 const OPERADORES_SQL: Record<string, string> = {
   eq: '=',
   neq: '!=',
@@ -98,6 +100,20 @@ export class FilterEngineService {
 
   private construirCondicion(condicion: Condition): ClausulaSQL {
     const columna = this.resolverColumna(condicion.field);
+
+    if (condicion.operator === 'is_empty') {
+      return {
+        sql: `(${columna} IS NULL OR ${columna} = '')`,
+        params: [],
+      };
+    }
+
+    if (condicion.operator === 'is_not_empty') {
+      return {
+        sql: `(${columna} IS NOT NULL AND ${columna} != '')`,
+        params: [],
+      };
+    }
 
     if (condicion.operator === 'in') {
       const valores = Array.isArray(condicion.value)

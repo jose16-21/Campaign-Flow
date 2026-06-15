@@ -29,7 +29,7 @@
     "3306": { "label": "MySQL" }
   },
 
-  "postCreateCommand": "npm install && echo 'DATABASE_URL=\"mysql://campaign:campaign@db:3306/campaign_flow\"' > backend/.env && echo 'PORT=3000' >> backend/.env && echo 'FRONTEND_URL=http://localhost:4200' >> backend/.env",
+  "postCreateCommand": "npm install && echo 'DATABASE_URL=\"mysql://campaign:campaign@db:3306/campaign_flow\"' > backend/.env && echo 'PORT=3000' >> backend/.env && echo 'FRONTEND_URL=http://localhost:4200' >> backend/.env && echo 'Esperando MySQL...' && until mysqladmin ping -h db -u campaign -pcampaign --silent 2>/dev/null; do sleep 2; done && echo 'MySQL listo — aplicando migraciones...' && cd backend && npx prisma migrate deploy && npx prisma db seed && echo 'Base de datos lista.'",
 
   "remoteUser": "node"
 }

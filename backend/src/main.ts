@@ -8,8 +8,15 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const origenesPermitidos = [
+    process.env['FRONTEND_URL'] ?? 'http://localhost:4200',
+    'http://localhost:4200',
+    /^http:\/\/172\.\d+\.\d+\.\d+:4200$/,
+    /^http:\/\/10\.\d+\.\d+\.\d+:4200$/,
+  ];
+
   app.enableCors({
-    origin: process.env['FRONTEND_URL'] ?? 'http://localhost:4200',
+    origin: origenesPermitidos,
   });
 
   app.useGlobalFilters(new AllExceptionsFilter());

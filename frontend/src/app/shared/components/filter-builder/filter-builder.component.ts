@@ -7,6 +7,7 @@ import {
   isFilterGroup,
   Operator,
   OPERATOR_LABELS,
+  OPERADORES_SIN_VALOR,
   CAMPOS_DISPONIBLES,
 } from '../../../domain/models/filter-tree.model';
 
@@ -24,6 +25,11 @@ export class FilterBuilderComponent {
   readonly campos = CAMPOS_DISPONIBLES;
   readonly operadorLabels = OPERATOR_LABELS;
   readonly operadores = Object.keys(OPERATOR_LABELS) as Operator[];
+  readonly operadoresSinValor = OPERADORES_SIN_VALOR;
+
+  requiereValor(op: Operator): boolean {
+    return !this.operadoresSinValor.has(op);
+  }
 
   isGroup = isFilterGroup;
 

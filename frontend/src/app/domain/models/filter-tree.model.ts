@@ -6,7 +6,11 @@ export type Operator =
   | 'lt'
   | 'lte'
   | 'in'
-  | 'contains';
+  | 'contains'
+  | 'is_empty'
+  | 'is_not_empty';
+
+export const OPERADORES_SIN_VALOR = new Set<Operator>(['is_empty', 'is_not_empty']);
 
 export interface Condition {
   field: string;
@@ -34,6 +38,8 @@ export const OPERATOR_LABELS: Record<Operator, string> = {
   lte: 'menor o igual que',
   in: 'está en',
   contains: 'contiene',
+  is_empty: 'está vacío',
+  is_not_empty: 'no está vacío',
 };
 
 export const CAMPOS_DISPONIBLES = [
@@ -41,6 +47,7 @@ export const CAMPOS_DISPONIBLES = [
   { value: 'city', label: 'Ciudad' },
   { value: 'status', label: 'Estado' },
   { value: 'email', label: 'Email' },
+  { value: 'phone', label: 'Teléfono' },
   { value: 'created_at', label: 'Fecha de creación' },
   { value: 'attributes.plan', label: 'Plan (atributo)' },
   { value: 'attributes.age', label: 'Edad (atributo)' },

@@ -16,7 +16,9 @@ export interface Canvas {
   edges: CanvasEdge[];
 }
 
-export type NodeType = 'segment' | 'sms';
+export type NodeType = 'segment' | 'sms' | 'email';
+
+export const TIPOS_ACCION: NodeType[] = ['sms', 'email'];
 
 export interface CanvasNode {
   id: string;
@@ -24,7 +26,7 @@ export interface CanvasNode {
   name?: string;
   x: number;
   y: number;
-  config: SegmentNodeConfig | SmsNodeConfig;
+  config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig;
 }
 
 export interface SegmentNodeConfig {
@@ -33,6 +35,11 @@ export interface SegmentNodeConfig {
 
 export interface SmsNodeConfig {
   message: string;
+}
+
+export interface EmailNodeConfig {
+  subject: string;
+  body: string;
 }
 
 export interface CanvasEdge {
