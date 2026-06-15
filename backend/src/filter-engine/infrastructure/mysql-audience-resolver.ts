@@ -66,6 +66,14 @@ export class MysqlAudienceResolver implements AudienceResolverPort {
   private construirCondicion(condicion: Condition): ClausulaSQL {
     const columna = this.resolverColumna(condicion.field);
 
+    if (condicion.operator === 'is_empty') {
+      return { sql: `(${columna} IS NULL OR ${columna} = '')`, params: [] };
+    }
+
+    if (condicion.operator === 'is_not_empty') {
+      return { sql: `(${columna} IS NOT NULL AND ${columna} != '')`, params: [] };
+    }
+
     if (condicion.operator === 'in') {
       const valores = Array.isArray(condicion.value) ? condicion.value : [condicion.value];
       return { sql: `${columna} IN (${valores.map(() => '?').join(', ')})`, params: valores };

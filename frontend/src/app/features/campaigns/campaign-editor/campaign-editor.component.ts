@@ -24,7 +24,9 @@ import type {
   CanvasEdge,
   SegmentNodeConfig,
   SmsNodeConfig,
+  EmailNodeConfig,
 } from '../../../domain/models/campaign.model';
+import { TIPOS_ACCION } from '../../../domain/models/campaign.model';
 import type { FilterGroup }    from '../../../domain/models/filter-tree.model';
 import type { AudienceResult } from '../../../domain/models/audience.model';
 import type { Contact }        from '../../../domain/models/contact.model';
@@ -34,11 +36,12 @@ import {
   resolverVariablesEjemplo,
 } from '../../../domain/models/sms-variables.model';
 
-type PaletteItem = { type: 'segment' | 'sms'; label: string; icon: string };
+type PaletteItem = { type: 'segment' | 'sms' | 'email'; label: string; icon: string };
 
 const PALETA: PaletteItem[] = [
   { type: 'segment', label: 'Segmento', icon: 'S' },
-  { type: 'sms',     label: 'SMS',       icon: 'M' },
+  { type: 'sms',     label: 'SMS',      icon: 'M' },
+  { type: 'email',   label: 'Email',    icon: 'E' },
 ];
 
 @Component({
@@ -91,7 +94,9 @@ export class CampaignEditorComponent implements OnInit {
         const aristasCargadas = (camp.canvas.edges ?? []).map(a => {
           const src = nodos.find(n => n.id === a.source);
           const tgt = nodos.find(n => n.id === a.target);
-          return (src?.type === 'sms' && tgt?.type === 'segment')
+          const srcEsAccion = src && TIPOS_ACCION.includes(src.type);
+          const tgtEsSegmento = tgt?.type === 'segment';
+          return (srcEsAccion && tgtEsSegmento)
             ? { source: a.target, target: a.source }
             : a;
         });
@@ -116,10 +121,12 @@ export class CampaignEditorComponent implements OnInit {
     if (!evento.data) return;
     const id  = `node-${this.nextId++}`;
     const pos = evento.dropPosition ?? { x: 200, y: 200 };
-    const config: SegmentNodeConfig | SmsNodeConfig =
+    const config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig =
       evento.data.type === 'segment'
         ? { filters: { op: 'AND', conditions: [] } }
-        : { message: '' };
+        : evento.data.type === 'email'
+          ? { subject: '', body: '' }
+          : { message: '' };
 
     this.posiciones.set(id, pos);
     this.nodos.update(n => [
@@ -141,11 +148,11 @@ export class CampaignEditorComponent implements OnInit {
     let targetId = evento.targetId.replace('_in', '');
     if (sourceId === targetId) return;
 
-    // Auto-corregir dirección invertida: si el usuario arrastró SMS → Segmento,
-    // se invierte para que siempre quede Segmento → SMS
+    // Auto-corregir dirección invertida: si el usuario arrastró acción → Segmento,
+    // se invierte para que siempre quede Segmento → acción
     const sourceNodo = this.nodos().find(n => n.id === sourceId);
     const targetNodo = this.nodos().find(n => n.id === targetId);
-    if (sourceNodo?.type === 'sms' && targetNodo?.type === 'segment') {
+    if (sourceNodo && TIPOS_ACCION.includes(sourceNodo.type) && targetNodo?.type === 'segment') {
       [sourceId, targetId] = [targetId, sourceId];
     }
 
@@ -163,7 +170,7 @@ export class CampaignEditorComponent implements OnInit {
     this.conexionesSeleccionadas.set([]); // limpiar selección de conexión al abrir panel
   }
 
-  actualizarConfig(config: SegmentNodeConfig | SmsNodeConfig): void {
+  actualizarConfig(config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig): void {
     const activo = this.nodoActivo();
     if (!activo) return;
     const actualizado = { ...activo, config };
@@ -206,57 +213,56 @@ export class CampaignEditorComponent implements OnInit {
     const nodos   = this.nodos();
     const aristas = this.aristas();
 
-    // Canvas vacío → bloquear (no hay nada que guardar)
     if (nodos.length === 0) {
-      return 'El canvas está vacío. Agrega al menos un Segmento y un SMS conectados.';
+      return 'El canvas está vacío. Agrega al menos un Segmento y una acción (SMS o Email) conectados.';
     }
 
-    // Debe existir al menos un Segmento Y un SMS
     const tieneSegmento = nodos.some(n => n.type === 'segment');
-    const tieneSms      = nodos.some(n => n.type === 'sms');
+    const tieneAccion   = nodos.some(n => TIPOS_ACCION.includes(n.type));
 
-    if (!tieneSegmento || !tieneSms) {
-      const nodosAislados = nodos.map(n => n.id);
-      this.nodosConError.set(new Set(nodosAislados));
-      return 'El canvas necesita al menos un nodo Segmento y un nodo SMS conectados para guardar.';
+    if (!tieneSegmento || !tieneAccion) {
+      this.nodosConError.set(new Set(nodos.map(n => n.id)));
+      return 'El canvas necesita al menos un nodo Segmento y una acción (SMS o Email) conectados para guardar.';
     }
 
-    // Cada SMS debe tener un Segmento como origen
-    const nodosSmsDesconectados = nodos
-      .filter(n => n.type === 'sms')
-      .filter(sms => {
-        const tieneSegmentoOrigen = aristas.some(a => {
-          if (a.target !== sms.id) return false;
-          const origen = nodos.find(n => n.id === a.source);
-          return origen?.type === 'segment';
-        });
-        return !tieneSegmentoOrigen;
-      });
+    // Cada nodo de acción debe tener un Segmento como origen
+    const accionesDesconectadas = nodos
+      .filter(n => TIPOS_ACCION.includes(n.type))
+      .filter(accion => !aristas.some(a => {
+        if (a.target !== accion.id) return false;
+        const origen = nodos.find(n => n.id === a.source);
+        return origen?.type === 'segment';
+      }));
 
-    if (nodosSmsDesconectados.length > 0) {
-      this.nodosConError.set(new Set(nodosSmsDesconectados.map(n => n.id)));
-      const nombres = nodosSmsDesconectados
-        .map(n => `"${this.truncar(this.smsConfig(n).message)}"`)
-        .join(', ');
-      return `Nodo(s) SMS sin Segmento conectado: ${nombres}. Conecta un Segmento como origen antes de guardar.`;
+    if (accionesDesconectadas.length > 0) {
+      this.nodosConError.set(new Set(accionesDesconectadas.map(n => n.id)));
+      const nombres = accionesDesconectadas.map(n => `"${this.etiquetaAccion(n)}"`).join(', ');
+      return `Nodo(s) de acción sin Segmento conectado: ${nombres}. Conecta un Segmento como origen antes de guardar.`;
     }
 
-    // Cada Segmento debe tener al menos un SMS como destino
+    // Cada Segmento debe tener al menos una acción como destino
     const segmentosDesconectados = nodos
       .filter(n => n.type === 'segment')
       .filter(seg => !aristas.some(a => {
         if (a.source !== seg.id) return false;
         const destino = nodos.find(n => n.id === a.target);
-        return destino?.type === 'sms';
+        return destino && TIPOS_ACCION.includes(destino.type);
       }));
 
     if (segmentosDesconectados.length > 0) {
       this.nodosConError.set(new Set(segmentosDesconectados.map(n => n.id)));
-      return 'Nodo(s) Segmento sin SMS conectado como destino. Conecta al menos un SMS a cada Segmento.';
+      return 'Nodo(s) Segmento sin acción conectada como destino. Conecta un SMS o Email a cada Segmento.';
     }
 
     this.nodosConError.set(new Set());
     return null;
+  }
+
+  private etiquetaAccion(nodo: CanvasNode): string {
+    if (nodo.name) return nodo.name;
+    if (nodo.type === 'sms') return this.truncar(this.smsConfig(nodo).message);
+    if (nodo.type === 'email') return this.emailConfig(nodo).subject || 'Sin asunto';
+    return nodo.id;
   }
 
   async guardar(): Promise<void> {
@@ -321,17 +327,23 @@ export class CampaignEditorComponent implements OnInit {
   }
 
   tieneAdvertencia(nodo: CanvasNode): boolean {
-    if (nodo.type === 'sms') {
-      return !this.smsConfig(nodo).message?.trim();
+    if (nodo.type === 'sms') return !this.smsConfig(nodo).message?.trim();
+    if (nodo.type === 'email') {
+      const c = this.emailConfig(nodo);
+      return !c.subject?.trim() || !c.body?.trim();
     }
-    if (nodo.type === 'segment') {
-      return !(this.segmentConfig(nodo).filters?.conditions?.length);
-    }
+    if (nodo.type === 'segment') return !(this.segmentConfig(nodo).filters?.conditions?.length);
     return false;
   }
 
   textoAdvertencia(nodo: CanvasNode): string {
     if (nodo.type === 'sms') return 'Mensaje vacío';
+    if (nodo.type === 'email') {
+      const c = this.emailConfig(nodo);
+      if (!c.subject?.trim() && !c.body?.trim()) return 'Asunto y cuerpo vacíos';
+      if (!c.subject?.trim()) return 'Asunto vacío';
+      return 'Cuerpo vacío';
+    }
     if (nodo.type === 'segment') return 'Sin filtros configurados';
     return '';
   }
@@ -340,7 +352,10 @@ export class CampaignEditorComponent implements OnInit {
     const nodo = this.nodos().find(n => n.id === id);
     if (!nodo) return id;
     if (nodo.name) return nodo.name;
-    return nodo.type === 'segment' ? 'Segmento' : `SMS "${this.truncar(this.smsConfig(nodo).message)}"`;
+    if (nodo.type === 'segment') return 'Segmento';
+    if (nodo.type === 'sms') return `SMS "${this.truncar(this.smsConfig(nodo).message)}"`;
+    if (nodo.type === 'email') return `Email "${this.truncar(this.emailConfig(nodo).subject)}"`;
+    return id;
   }
 
   eliminarArista(source: string, target: string): void {
@@ -490,6 +505,22 @@ export class CampaignEditorComponent implements OnInit {
 
   smsConfig(nodo: CanvasNode): SmsNodeConfig {
     return (nodo.config ?? { message: '' }) as SmsNodeConfig;
+  }
+
+  emailConfig(nodo: CanvasNode): EmailNodeConfig {
+    return (nodo.config ?? { subject: '', body: '' }) as EmailNodeConfig;
+  }
+
+  actualizarAsunto(asunto: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'email') return;
+    this.actualizarConfig({ ...this.emailConfig(activo), subject: asunto } as EmailNodeConfig);
+  }
+
+  actualizarCuerpo(cuerpo: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'email') return;
+    this.actualizarConfig({ ...this.emailConfig(activo), body: cuerpo } as EmailNodeConfig);
   }
 
   get contadorSms(): string {

@@ -35,11 +35,13 @@
               }
             </select>
 
-            <input
-              type="text"
-              placeholder="Valor"
-              [ngModel]="asCondition(nodo).value"
-              (ngModelChange)="actualizarCondicion($index, 'value', $event)" />
+            @if (requiereValor(asCondition(nodo).operator)) {
+              <input
+                type="text"
+                placeholder="Valor"
+                [ngModel]="asCondition(nodo).value"
+                (ngModelChange)="actualizarCondicion($index, 'value', $event)" />
+            }
           </div>
         }
 
