@@ -93,6 +93,35 @@
   f-flow { width: 100%; height: 100%; display: block; }
 }
 
+// Controles de zoom flotantes (esquina inferior-derecha del canvas)
+.canvas-controls {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 100;
+
+  &__btn {
+    width: 32px; height: 32px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 16px; line-height: 1;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    color: #374151;
+    transition: background .1s, border-color .1s;
+
+    &:hover { background: #f3f4f6; border-color: #9ca3af; }
+    &:active { background: #e5e7eb; }
+
+    &--fit { font-size: 14px; }
+  }
+}
+
 // ────────────────────────────────────────────────────────
 // NODO — card con formulario inline
 // Cada tipo WP tiene su propia identidad visual
@@ -538,6 +567,130 @@
 }
 
 // ────────────────────────────────────────────────────────
+// Paleta — botón de marco
+// ────────────────────────────────────────────────────────
+.palette__btn-marco {
+  width: 100%; padding: 6px; margin-bottom: 6px;
+  border: 1px dashed #4a90e2; border-radius: 6px;
+  background: #fff; color: #4a90e2; font-size: 12px; cursor: pointer;
+  &:hover { background: #eff6ff; }
+}
+
+.palette__section--canvas { color: #555; margin-top: 8px; }
+.palette__item--canvas {
+  border-color: #e0e0e0;
+  &:hover { border-color: #555; background: #f5f5f5; }
+}
+
+// ────────────────────────────────────────────────────────
+// Marco de proceso (fGroup)
+// ────────────────────────────────────────────────────────
+.marco {
+  border: 2px dashed var(--marco-color, #4a90e2);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--marco-color, #4a90e2) 6%, transparent);
+  min-width: 200px;
+  min-height: 160px;
+  position: relative;
+  box-sizing: border-box;
+
+  &__header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 10px;
+    background: color-mix(in srgb, var(--marco-color, #4a90e2) 12%, white);
+    border-radius: 8px 8px 0 0;
+    cursor: grab;
+    &:active { cursor: grabbing; }
+    user-select: none;
+  }
+
+  &__title-input {
+    flex: 1; border: none; background: transparent;
+    font-size: 12px; font-weight: 700;
+    color: color-mix(in srgb, var(--marco-color, #4a90e2) 90%, #000);
+    outline: none; cursor: text;
+    user-select: text !important;
+    pointer-events: auto !important;
+    min-width: 0;
+  }
+
+  &__colors {
+    display: flex; gap: 3px; flex-shrink: 0;
+  }
+
+  &__color-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer; padding: 0;
+    &--activo { border-color: #333; }
+    &:hover { transform: scale(1.2); }
+  }
+
+  &__del {
+    background: none; border: none; cursor: pointer;
+    color: #aaa; font-size: 16px; line-height: 1;
+    padding: 0 2px; flex-shrink: 0;
+    &:hover { color: #c62828; }
+  }
+
+  &__resize-handle {
+    position: absolute; bottom: 0; right: 0;
+    width: 16px; height: 16px;
+    cursor: nwse-resize;
+    &::after {
+      content: '';
+      position: absolute; bottom: 3px; right: 3px;
+      width: 8px; height: 8px;
+      border-right: 2px solid var(--marco-color, #4a90e2);
+      border-bottom: 2px solid var(--marco-color, #4a90e2);
+      border-radius: 1px;
+    }
+  }
+}
+
+// ────────────────────────────────────────────────────────
+// Nota de texto (annotation)
+// ────────────────────────────────────────────────────────
+.nodo-nota {
+  min-width: 180px; max-width: 280px;
+  border-radius: 6px;
+  box-shadow: 2px 2px 8px rgba(0,0,0,.12);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex; align-items: center; gap: 5px;
+    padding: 5px 8px;
+    background: rgba(0,0,0,.07);
+    cursor: grab;
+    user-select: none;
+    &:active { cursor: grabbing; }
+    span { font-size: 13px; }
+  }
+
+  &__colors {
+    display: flex; gap: 3px;
+  }
+
+  &__color-dot {
+    width: 11px; height: 11px; border-radius: 50%;
+    border: 2px solid transparent; cursor: pointer; padding: 0;
+    pointer-events: auto !important;
+    &--activo { border-color: #555; }
+  }
+
+  &__text {
+    flex: 1; border: none; resize: none;
+    background: transparent; padding: 8px 10px;
+    font-size: 12px; line-height: 1.6; color: #333;
+    font-family: inherit;
+    min-height: 80px;
+    outline: none;
+    user-select: text !important;
+    pointer-events: auto !important;
+  }
+}
+
+// ────────────────────────────────────────────────────────
 // Etiquetas sobre las líneas de conexión
 // foblex proyecta el contenido de <f-connection> en el punto
 // central de cada línea, por eso .arista-label flota ahí.
@@ -636,4 +789,74 @@
 @keyframes pulseError {
   0%, 100% { box-shadow: 0 0 0 2px rgba(198,40,40,.25); }
   50%       { box-shadow: 0 0 0 5px rgba(198,40,40,.45); }
+}
+
+// ────────────────────────────────────────────────────────
+// Nodo — vista compacta (resumen)
+// ────────────────────────────────────────────────────────
+.nodo__preview {
+  font-size: 11px; color: #555; margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;
+}
+.nodo__edit-hint {
+  font-size: 10px; color: #aaa; margin: 2px 0 0; font-style: italic;
+}
+.nodo__branch-label {
+  font-size: 11px; color: #444;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; padding: 1px 0;
+}
+
+// ────────────────────────────────────────────────────────
+// Panel — elementos nuevos
+// ────────────────────────────────────────────────────────
+.panel-counter {
+  font-size: 11px; color: #888; text-align: right; margin: 2px 0 6px;
+  &--over { color: #c62828; font-weight: 600; }
+}
+
+.panel-tipo-wp {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
+}
+.panel-tipo-btn {
+  padding: 5px 10px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f8f8f8; font-size: 12px; cursor: pointer; transition: all .15s;
+  &:hover { border-color: #1a8a47; background: #f0fdf4; }
+  &--activo { background: #1a8a47; color: #fff; border-color: #1a8a47; font-weight: 600; }
+}
+
+.panel-branch-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+  input { flex: 1; }
+}
+
+.panel-media-tipos {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.panel-media-btn {
+  flex: 1; padding: 6px 4px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f8f8f8; font-size: 12px; cursor: pointer; text-align: center;
+  &:hover { border-color: #b45309; }
+  &--activo { background: #fffbeb; border-color: #b45309; color: #b45309; font-weight: 600; }
+}
+
+.panel-ticket-tipos {
+  display: flex; gap: 8px; margin-bottom: 10px;
+}
+.panel-ticket-btn {
+  flex: 1; padding: 8px 6px; border-radius: 6px; border: 1px solid #ddd;
+  background: #f8f8f8; font-size: 13px; cursor: pointer; text-align: center;
+  &:hover { border-color: #b91c1c; }
+  &--activo { background: #fff1f2; border-color: #b91c1c; color: #b91c1c; font-weight: 600; }
+}
+
+.btn--sm { padding: 4px 10px; font-size: 12px; }
+.btn-delete--sm {
+  background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; padding: 0 4px;
+  &:hover { color: #c62828; }
+}
+
+.panel-branch-select {
+  font-size: 12px; margin-bottom: 8px; color: #1a8a47;
+  option[value=""] { color: #aaa; }
 }

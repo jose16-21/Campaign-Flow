@@ -42,6 +42,31 @@ export class CanvasEdgeDto {
   etiqueta?: string;
 }
 
+export class CanvasGroupDto {
+  @IsString()
+  @IsNotEmpty()
+  id!: string;
+
+  @IsString()
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  color?: string;
+
+  @IsNumber()
+  x!: number;
+
+  @IsNumber()
+  y!: number;
+
+  @IsNumber()
+  width!: number;
+
+  @IsNumber()
+  height!: number;
+}
+
 export class SaveCanvasDto {
   @IsArray()
   @ValidateNested({ each: true })
@@ -52,4 +77,10 @@ export class SaveCanvasDto {
   @ValidateNested({ each: true })
   @Type(() => CanvasEdgeDto)
   edges!: CanvasEdgeDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CanvasGroupDto)
+  groups?: CanvasGroupDto[];
 }

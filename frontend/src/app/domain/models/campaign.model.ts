@@ -19,27 +19,40 @@ export interface Campaign {
   canvas?: Canvas;
 }
 
+export interface CanvasGroup {
+  id: string;
+  title: string;
+  color: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface Canvas {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
+  groups?: CanvasGroup[];
 }
 
-export type NodeType = 'segment' | 'sms' | 'email' | 'whatsapp';
+export type NodeType = 'segment' | 'sms' | 'email' | 'whatsapp' | 'annotation';
 
 export const TIPOS_ACCION: NodeType[] = ['sms', 'email', 'whatsapp'];
 
 export const ICONO_NODO: Record<NodeType, string> = {
-  segment:  '⚙',
-  sms:      '💬',
-  email:    '✉',
-  whatsapp: '📲',
+  segment:    '⚙',
+  sms:        '💬',
+  email:      '✉',
+  whatsapp:   '📲',
+  annotation: '📝',
 };
 
 export const LABEL_NODO: Record<NodeType, string> = {
-  segment:  'Segmento',
-  sms:      'SMS',
-  email:    'Email',
-  whatsapp: 'WhatsApp',
+  segment:    'Segmento',
+  sms:        'SMS',
+  email:      'Email',
+  whatsapp:   'WhatsApp',
+  annotation: 'Nota',
 };
 
 export interface CanvasNode {
@@ -48,7 +61,12 @@ export interface CanvasNode {
   name?: string;
   x: number;
   y: number;
-  config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig;
+  config: AnnotationNodeConfig | SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig;
+}
+
+export interface AnnotationNodeConfig {
+  text: string;
+  color: string;
 }
 
 export interface SegmentNodeConfig {

@@ -4,7 +4,9 @@ import {
   HostListener,
   inject,
   signal,
+  computed,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -12,6 +14,10 @@ import {
   FCreateNodeEvent,
   FCreateConnectionEvent,
   FSelectionChangeEvent,
+  FCanvasComponent,
+  FZoomDirective,
+  EFZoomDirection,
+  EFResizeHandleType,
 } from '@foblex/flow';
 import { GetCampaignUseCase }     from '../../../application/use-cases/campaigns/get-campaign.use-case';
 import { SaveCanvasUseCase }      from '../../../application/use-cases/campaigns/save-canvas.use-case';
@@ -22,6 +28,8 @@ import type {
   Campaign,
   CanvasNode,
   CanvasEdge,
+  CanvasGroup,
+  AnnotationNodeConfig,
   SegmentNodeConfig,
   SmsNodeConfig,
   EmailNodeConfig,
@@ -42,18 +50,20 @@ import {
 } from '../../../domain/models/sms-variables.model';
 
 type PaletteItem = {
-  type: 'segment' | 'sms' | 'email' | 'whatsapp';
+  type: 'segment' | 'sms' | 'email' | 'whatsapp' | 'annotation';
   label: string;
   icon: string;
   wpTipo?: WhatsappTipo;
-  section?: 'base' | 'wp';
+  section?: 'base' | 'wp' | 'canvas';
 };
 
 const PALETA: PaletteItem[] = [
   // Nodos base
-  { type: 'segment',  label: 'Segmento',     icon: ICONO_NODO.segment, section: 'base' },
-  { type: 'sms',      label: 'SMS',          icon: ICONO_NODO.sms,     section: 'base' },
-  { type: 'email',    label: 'Email',        icon: ICONO_NODO.email,   section: 'base' },
+  { type: 'segment',    label: 'Segmento',     icon: ICONO_NODO.segment, section: 'base' },
+  { type: 'sms',        label: 'SMS',          icon: ICONO_NODO.sms,     section: 'base' },
+  { type: 'email',      label: 'Email',        icon: ICONO_NODO.email,   section: 'base' },
+  // Anotaciones y marcos
+  { type: 'annotation', label: 'Nota',         icon: '📝', section: 'canvas' },
   // Nodos WhatsApp (cada uno es su propio tipo de nodo)
   { type: 'whatsapp', label: 'WP Texto',     icon: '💬', wpTipo: 'texto',     section: 'wp' },
   { type: 'whatsapp', label: 'WP Botones',   icon: '🔘', wpTipo: 'botones',   section: 'wp' },
@@ -63,6 +73,9 @@ const PALETA: PaletteItem[] = [
   { type: 'whatsapp', label: 'WP Condición', icon: '⬦',  wpTipo: 'condicion', section: 'wp' },
   { type: 'whatsapp', label: 'WP Ticket',    icon: '🎫', wpTipo: 'ticket',    section: 'wp' },
 ];
+
+const COLORES_MARCO = ['#4a90e2', '#1a8a47', '#e57c00', '#7c3aed', '#e53935', '#555'];
+const COLORES_NOTA  = ['#fef9c3', '#dcfce7', '#dbeafe', '#fce7f3'];
 
 const WP_TIPO_META: Record<WhatsappTipo, { label: string; icon: string; color: string; bgColor: string }> = {
   texto:     { label: 'WP Texto',      icon: '💬', color: '#1a8a47', bgColor: '#f0fdf4' },
@@ -82,6 +95,9 @@ const WP_TIPO_META: Record<WhatsappTipo, { label: string; icon: string; color: s
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CampaignEditorComponent implements OnInit {
+  @ViewChild(FCanvasComponent) private fCanvas!: FCanvasComponent;
+  @ViewChild(FZoomDirective)   private fZoom!: FZoomDirective;
+
   private readonly route           = inject(ActivatedRoute);
   private readonly router          = inject(Router);
   private readonly getUseCase      = inject(GetCampaignUseCase);
@@ -92,6 +108,9 @@ export class CampaignEditorComponent implements OnInit {
   readonly campania          = signal<Campaign | null>(null);
   readonly nodos             = signal<CanvasNode[]>([]);
   readonly aristas           = signal<CanvasEdge[]>([]);
+  readonly grupos            = signal<CanvasGroup[]>([]);
+  readonly nodosCanvas       = computed(() => this.nodos().filter(n => n.type !== 'annotation'));
+  readonly nodosNota         = computed(() => this.nodos().filter(n => n.type === 'annotation'));
   readonly nodoActivo        = signal<CanvasNode | null>(null);
   readonly guardando         = signal(false);
   readonly activando         = signal(false);
@@ -106,13 +125,27 @@ export class CampaignEditorComponent implements OnInit {
 
   readonly paleta              = PALETA;
   readonly paletaBase          = PALETA.filter(i => i.section === 'base');
+  readonly paletaCanvas        = PALETA.filter(i => i.section === 'canvas');
   readonly paletaWp            = PALETA.filter(i => i.section === 'wp');
   readonly variablesDisponibles = SMS_VARIABLES;
   readonly iconoNodo           = ICONO_NODO;
   readonly labelNodo           = LABEL_NODO;
   readonly locales             = LOCALES_DISPONIBLES;
   readonly wpTipoMeta          = WP_TIPO_META;
+  readonly wpTiposList: { value: WhatsappTipo; label: string; icon: string }[] = [
+    { value: 'texto',     label: 'Texto',     icon: '💬' },
+    { value: 'template',  label: 'Template',  icon: '📋' },
+    { value: 'botones',   label: 'Botones',   icon: '🔘' },
+    { value: 'lista',     label: 'Lista',     icon: '📜' },
+    { value: 'media',     label: 'Media',     icon: '🖼'  },
+    { value: 'condicion', label: 'Condición', icon: '⬦'  },
+    { value: 'ticket',    label: 'Ticket',    icon: '🎫' },
+  ];
+  readonly resizeHandleType    = EFResizeHandleType;
+  readonly coloresMarco        = COLORES_MARCO;
+  readonly coloresNota         = COLORES_NOTA;
   private nextId = 1;
+  private nextGroupId = 1;
   private smsTextareaRef: HTMLTextAreaElement | null = null;
 
   // Map plano (no signal) para posiciones — evita disparar change detection durante el drag
@@ -128,22 +161,40 @@ export class CampaignEditorComponent implements OnInit {
         nodos.forEach(n => this.posiciones.set(n.id, { x: n.x, y: n.y }));
         this.nodos.set(nodos);
         // Auto-corregir aristas invertidas (SMS→Segmento) al cargar
-        const aristasCargadas = (camp.canvas.edges ?? []).map(a => {
-          const src = nodos.find(n => n.id === a.source);
-          const tgt = nodos.find(n => n.id === a.target);
-          const srcEsAccion = src && TIPOS_ACCION.includes(src.type);
-          const tgtEsSegmento = tgt?.type === 'segment';
-          return (srcEsAccion && tgtEsSegmento)
-            ? { source: a.target, target: a.source }
-            : a;
-        });
+        const aristasCargadas = (camp.canvas.edges ?? [])
+          .map(a => {
+            const src = nodos.find(n => n.id === a.source);
+            const tgt = nodos.find(n => n.id === a.target);
+            const srcEsAccion = src && TIPOS_ACCION.includes(src.type);
+            const tgtEsSegmento = tgt?.type === 'segment';
+            return (srcEsAccion && tgtEsSegmento)
+              ? { source: a.target, target: a.source }
+              : a;
+          })
+          .filter(a => {
+            // Descartar aristas de nodos ramificados sin condicion: son conexiones
+            // guardadas antes del fix del DTO (whitelist eliminaba condicion/etiqueta).
+            // Sin condicion, el puerto fOutputId no existe y foblex bloquea el drag.
+            const src = nodos.find(n => n.id === a.source);
+            if (src?.type === 'whatsapp') {
+              const c = src.config as WhatsappNodeConfig;
+              if ((c.tipo === 'botones' || c.tipo === 'lista') && !a.condicion) return false;
+            }
+            return true;
+          });
         this.aristas.set(aristasCargadas);
+        this.grupos.set(camp.canvas.groups ?? []);
         // nextId basado en el máximo índice "node-N" existente para evitar colisiones
         const maxIdx = nodos.reduce((max, n) => {
           const m = n.id.match(/^node-(\d+)$/);
           return m ? Math.max(max, parseInt(m[1], 10)) : max;
         }, 0);
         this.nextId = maxIdx + 1;
+        const maxGIdx = (camp.canvas.groups ?? []).reduce((max, g) => {
+          const m = g.id.match(/^group-(\d+)$/);
+          return m ? Math.max(max, parseInt(m[1], 10)) : max;
+        }, 0);
+        this.nextGroupId = maxGIdx + 1;
       }
     } catch {
       this.error.set('No se pudo cargar la campaña');
@@ -158,8 +209,10 @@ export class CampaignEditorComponent implements OnInit {
     if (!evento.data) return;
     const id  = `node-${this.nextId++}`;
     const pos = evento.dropPosition ?? { x: 200, y: 200 };
-    let config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig;
-    if (evento.data.type === 'segment') {
+    let config: AnnotationNodeConfig | SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig;
+    if (evento.data.type === 'annotation') {
+      config = { text: '', color: '#fef9c3' };
+    } else if (evento.data.type === 'segment') {
       config = { filters: { op: 'AND', conditions: [] } };
     } else if (evento.data.type === 'email') {
       config = { subject: '', body: '' };
@@ -550,6 +603,7 @@ export class CampaignEditorComponent implements OnInit {
       await this.saveUseCase.ejecutar(camp.id, {
         nodes: nodosActualizados,
         edges: this.aristas(),
+        groups: this.grupos(),
       });
       this.exito.set('Canvas guardado correctamente');
       setTimeout(() => this.exito.set(null), 3000);
@@ -975,10 +1029,90 @@ export class CampaignEditorComponent implements OnInit {
     return msg.length > 30 ? msg.slice(0, 30) + '...' : msg;
   }
 
+  destinoBranch(nodo: CanvasNode, condicion: string): string {
+    const arista = this.aristas().find(a => a.source === nodo.id && a.condicion === condicion);
+    if (!arista) return '— sin conexión';
+    return this.etiquetaNodo(arista.target);
+  }
+
+  targetDeRama(nodo: CanvasNode, condicion: string): string {
+    return this.aristas().find(a => a.source === nodo.id && a.condicion === condicion)?.target ?? '';
+  }
+
+  nodosDisponibles(nodoId: string): CanvasNode[] {
+    return this.nodos().filter(n => n.id !== nodoId && n.type !== 'annotation');
+  }
+
+  asignarDestinoBranch(nodo: CanvasNode, condicion: string, targetId: string): void {
+    this.aristas.update(edges => {
+      const sinEsta = edges.filter(a => !(a.source === nodo.id && a.condicion === condicion));
+      if (!targetId) return sinEsta;
+      return [...sinEsta, { source: nodo.id, target: targetId, condicion }];
+    });
+  }
+
   get superaLimiteSms(): boolean {
     const activo = this.nodoActivo();
     if (!activo || activo.type !== 'sms') return false;
     const msg = (activo.config as SmsNodeConfig).message ?? '';
     return msg.length > (/[^\x00-\x7F]/.test(msg) ? 70 : 160);
+  }
+
+  ajustarVista(): void {
+    this.fCanvas?.fitToScreen({ x: 40, y: 40 }, true);
+  }
+
+  zoomIn(): void {
+    this.fZoom?.setZoom({ x: 0, y: 0 }, 0.1, EFZoomDirection.ZOOM_IN, true);
+  }
+
+  zoomOut(): void {
+    this.fZoom?.setZoom({ x: 0, y: 0 }, 0.1, EFZoomDirection.ZOOM_OUT, true);
+  }
+
+  // ── Anotaciones ──────────────────────────────────────────
+  annotationConfig(nodo: CanvasNode): AnnotationNodeConfig {
+    return nodo.config as AnnotationNodeConfig;
+  }
+
+  actualizarTextoAnnotation(nodo: CanvasNode, text: string): void {
+    this.nodos.update(ns => ns.map(n =>
+      n.id === nodo.id ? { ...n, config: { ...this.annotationConfig(n), text } } : n
+    ));
+  }
+
+  actualizarColorAnnotation(nodo: CanvasNode, color: string): void {
+    this.nodos.update(ns => ns.map(n =>
+      n.id === nodo.id ? { ...n, config: { ...this.annotationConfig(n), color } } : n
+    ));
+  }
+
+  // ── Marcos / grupos ──────────────────────────────────────
+  agregarMarco(): void {
+    const id = `group-${this.nextGroupId++}`;
+    this.grupos.update(gs => [...gs, {
+      id, title: 'Proceso', color: '#4a90e2',
+      x: 100, y: 100, width: 360, height: 280,
+    }]);
+  }
+
+  actualizarTituloGrupo(id: string, title: string): void {
+    this.grupos.update(gs => gs.map(g => g.id === id ? { ...g, title } : g));
+  }
+
+  actualizarColorGrupo(id: string, color: string): void {
+    this.grupos.update(gs => gs.map(g => g.id === id ? { ...g, color } : g));
+  }
+
+  actualizarPosGrupo(id: string, pos: { x: number; y: number }): void {
+    this.grupos.update(gs => gs.map(g => g.id === id ? { ...g, x: pos.x, y: pos.y } : g));
+  }
+
+  actualizarTamGrupo(id: string, size: { width: number; height: number }): void {
+    this.grupos.update(gs => gs.map(g => g.id === id ? { ...g, width: size.width, height: size.height } : g));
+  }
+
+  eliminarGrupo(id: string): void {
+    this.grupos.update(gs => gs.filter(g => g.id !== id));
   }
 }
