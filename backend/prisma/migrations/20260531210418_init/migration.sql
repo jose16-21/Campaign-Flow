@@ -26,6 +26,7 @@ CREATE TABLE `campaigns` (
     `description` VARCHAR(191) NULL,
     `status` ENUM('DRAFT', 'ACTIVE') NOT NULL DEFAULT 'DRAFT',
     `locale` VARCHAR(10) NOT NULL DEFAULT 'es',
+    `owner_id` VARCHAR(191) NOT NULL DEFAULT '1107b43e-997a-42f9-9101-9e238d4ccef8',
     `canvas` JSON NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 

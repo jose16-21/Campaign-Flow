@@ -1,503 +1,607 @@
-:host {
-  display: block;
-  height: 100%;
-}
+:host { display: block; height: 100%; }
 
+// ────────────────────────────────────────────────────────
+// Layout raíz
+// ────────────────────────────────────────────────────────
 .editor {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: flex; flex-direction: column; height: 100%;
 
   &__topbar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    height: 48px;
-    background: #fff;
-    border-bottom: 1px solid #e0e0e0;
-    flex-shrink: 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; height: 48px;
+    background: #fff; border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
   }
 
   &__title-group {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
+    flex: 1; display: flex; align-items: center; gap: 4px; min-width: 0;
   }
 
   &__title {
-    font-size: 16px;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 15px; font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
 
-  &__body {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
+  &__body { display: flex; flex: 1; overflow: hidden; }
 }
 
-.btn-back {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #666;
-  font-size: 13px;
-  &:hover { color: #1a1a2e; }
-}
-
-.badge-locale {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  background: #e8f0fe;
-  color: #1967d2;
-  border-radius: 4px;
-  padding: 2px 6px;
-  flex-shrink: 0;
-}
-
+// ────────────────────────────────────────────────────────
+// Paleta lateral — dos secciones
+// ────────────────────────────────────────────────────────
 .palette {
-  width: 140px;
-  background: #fff;
+  width: 148px;
+  background: #fafafa;
   border-right: 1px solid #e0e0e0;
-  padding: 12px 8px;
+  padding: 10px 8px 10px;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
 
-  &__title {
-    font-size: 10px;
-    text-transform: uppercase;
-    color: #999;
-    margin-bottom: 8px;
-    padding: 0 4px;
+  &__section {
+    font-size: 9px; font-weight: 700; letter-spacing: .6px;
+    text-transform: uppercase; color: #aaa;
+    padding: 6px 4px 4px; margin: 0;
+    &--wp { color: #1a8a47; margin-top: 8px; }
   }
 
   &__item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    border-radius: 6px;
-    border: 1px solid #e0e0e0;
-    cursor: grab;
-    margin-bottom: 8px;
-    font-size: 13px;
-    background: #fff;
-    user-select: none;
-
-    &:hover { border-color: #1a1a2e; background: #f8f8ff; }
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px; border-radius: 6px; border: 1px solid #e0e0e0;
+    cursor: grab; margin-bottom: 6px; font-size: 12px;
+    background: #fff; user-select: none;
+    &:hover { border-color: #555; background: #f5f5f5; }
     &:active { cursor: grabbing; }
+
+    // WhatsApp palette item colors
+    &--wp {
+      border-color: #d1fae5;
+      &:hover { border-color: #25d366; background: #f0fdf4; }
+    }
+    &--botones  { border-color: #a7f3d0; }
+    &--lista    { border-color: #bfdbfe; &:hover { border-color: #3b82f6; background: #eff6ff; } }
+    &--template { border-color: #ddd6fe; &:hover { border-color: #7c3aed; background: #f5f3ff; } }
+    &--media    { border-color: #fde68a; &:hover { border-color: #d97706; background: #fffbeb; } }
+    &--ticket   { border-color: #fecaca; &:hover { border-color: #e53935; background: #fff1f2; } }
+    &--condicion { border-color: #fed7aa; &:hover { border-color: #ea580c; background: #fff7ed; } }
   }
 
   &__icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #1a1a2e;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    flex-shrink: 0;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #1a1a2e; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+    &--sms   { background: #e57c00; }
+    &--email { background: #1565c0; }
+  }
 
-    &--sms      { background: #e57c00; }
-    &--email    { background: #1565c0; }
-    &--whatsapp { background: #25d366; }
+  &__icon--wp {
+    font-size: 15px; flex-shrink: 0; width: 22px; text-align: center;
+  }
+
+  &__hint {
+    font-size: 10px; color: #bbb; line-height: 1.7;
+    padding: 8px 4px 0; border-top: 1px dashed #eee; margin-top: auto;
   }
 }
 
+// ────────────────────────────────────────────────────────
+// Canvas
+// ────────────────────────────────────────────────────────
 .canvas-wrapper {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-
-  f-flow {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
+  flex: 1; position: relative; overflow: hidden;
+  f-flow { width: 100%; height: 100%; display: block; }
 }
 
+// ────────────────────────────────────────────────────────
+// NODO — card con formulario inline
+// Cada tipo WP tiene su propia identidad visual
+// ────────────────────────────────────────────────────────
 .nodo {
   background: #fff;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  min-width: 160px;
-  cursor: grab;
+  border-radius: 10px;
+  min-width: 240px;
+  max-width: 310px;
   position: relative;
+  box-shadow: 0 2px 8px rgba(0,0,0,.07);
   touch-action: none;
-  user-select: none;
+  transition: box-shadow .15s;
+  overflow: visible !important;
 
-  &:active { cursor: grabbing; }
-
-  &--segment  { border-color: #1a1a2e; }
+  // ── Base types ──
+  &--segment  { border-color: #1a1a2e; min-width: 200px; }
   &--sms      { border-color: #e57c00; }
   &--email    { border-color: #1565c0; }
-  &--whatsapp { border-color: #25d366; }
+
+  // ── WhatsApp tipos — cada uno es su propio color ──
+  &--wp-texto    { border-color: #25d366; }
+  &--wp-botones  { border-color: #075e54; min-width: 260px; }
+  &--wp-lista    { border-color: #3b82f6; min-width: 260px; }
+  &--wp-media    { border-color: #d97706; }
+  &--wp-template { border-color: #7c3aed; }
+  &--wp-ticket   { border-color: #e53935; }
+  &--wp-condicion {
+    border-color: #ea580c;
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border: 2px dashed rgba(234,88,12,.3);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+  }
+
   &--error {
     border-color: #c62828;
-    box-shadow: 0 0 0 2px rgba(198, 40, 40, .25);
+    box-shadow: 0 0 0 2px rgba(198,40,40,.25);
     animation: pulseError 1.5s ease-in-out 3;
   }
-  &--activo { box-shadow: 0 0 0 2px #4a90e2; }
+  &--activo { box-shadow: 0 0 0 3px rgba(74,144,226,.55), 0 4px 16px rgba(0,0,0,.1); }
 
-  &__drag-area {
-    cursor: grab;
-    &:active { cursor: grabbing; }
-  }
-
+  // ── Header: EL drag handle ──
   &__header {
-    display: flex;
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 10px;
+    border-bottom: 1px solid rgba(0,0,0,.07);
+    border-radius: 8px 8px 0 0;
+    cursor: grab;
+    user-select: none;
+    background: #f9f9f9;
+
+    &:active { cursor: grabbing; }
+
+    .nodo--segment  & { background: #f0f0f8; }
+    .nodo--sms      & { background: #fff8f0; }
+    .nodo--email    & { background: #f0f5ff; }
+    .nodo--wp-texto    & { background: #f0fdf4; }
+    .nodo--wp-botones  & { background: #ecfdf5; }
+    .nodo--wp-lista    & { background: #eff6ff; }
+    .nodo--wp-media    & { background: #fffbeb; }
+    .nodo--wp-template & { background: #f5f3ff; }
+    .nodo--wp-ticket   & { background: #fff1f2; }
+    .nodo--wp-condicion & { background: #fff7ed; }
+  }
+
+  &__icon-header {
+    font-size: 14px; flex-shrink: 0; line-height: 1;
+  }
+
+  &__type {
+    font-size: 12px; font-weight: 600; flex: 1; color: #333;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  &__advertencia { font-size: 12px; color: #e57c00; flex-shrink: 0; cursor: help; }
+
+  &__del-btn {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 16px; line-height: 1;
+    padding: 0 2px; flex-shrink: 0; border-radius: 3px;
+    &:hover { color: #c62828; background: rgba(198,40,40,.08); }
+  }
+
+  // ── Formulario inline ──
+  // Los !important son necesarios para anular user-select:none que foblex
+  // aplica globalmente al elemento [fNode] para evitar selección accidental durante el drag.
+  &__form {
+    padding: 9px 10px;
+    display: flex; flex-direction: column; gap: 6px;
+    cursor: default;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+
+    input, textarea, select {
+      pointer-events: auto !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    button {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+    }
+  }
+
+  &__seg-count { font-size: 12px; font-weight: 600; color: #1a1a2e; }
+  &__aviso     { color: #e57c00; font-size: 11px; font-style: italic; }
+  &__hint      { font-size: 10px; color: #aaa; font-style: italic; margin: 0; }
+
+  &__input {
+    width: 100%; padding: 6px 8px; border: 1px solid #ddd;
+    border-radius: 5px; font-size: 12px; font-family: inherit; color: #333;
+    box-sizing: border-box;
+    &:focus { outline: none; }
+    .nodo--wp-texto    & { &:focus { border-color: #25d366; } }
+    .nodo--wp-botones  & { &:focus { border-color: #075e54; } }
+    .nodo--wp-lista    & { &:focus { border-color: #3b82f6; } }
+    .nodo--wp-media    & { &:focus { border-color: #d97706; } }
+    .nodo--wp-template & { &:focus { border-color: #7c3aed; } }
+    .nodo--wp-ticket   & { &:focus { border-color: #e53935; } }
+    .nodo--wp-condicion & { &:focus { border-color: #ea580c; } }
+    .nodo--sms   & { &:focus { border-color: #e57c00; } }
+    .nodo--email & { &:focus { border-color: #1565c0; } }
+
+    &--condval { flex: 1; width: auto; }
+  }
+
+  &__textarea {
+    width: 100%; padding: 6px 8px; border: 1px solid #ddd;
+    border-radius: 5px; font-size: 12px; font-family: inherit; color: #333;
+    resize: vertical; min-height: 56px; box-sizing: border-box; line-height: 1.5;
+    &:focus { outline: none; border-color: #25d366; }
+    .nodo--sms   & { &:focus { border-color: #e57c00; } }
+    .nodo--email & { &:focus { border-color: #1565c0; } }
+    .nodo--wp-botones  & { &:focus { border-color: #075e54; } }
+    .nodo--wp-lista    & { &:focus { border-color: #3b82f6; } }
+    .nodo--wp-ticket   & { &:focus { border-color: #e53935; } }
+    &--sm { min-height: 40px; }
+  }
+
+  &__media-tipos { display: flex; gap: 4px; }
+  &__media-btn {
+    flex: 1; padding: 4px; border: 1px solid #ddd; border-radius: 4px;
+    background: #fff; font-size: 11px; cursor: pointer; color: #666;
+    &:hover { border-color: #d97706; }
+    &--activo { border-color: #d97706; background: #fffbeb; color: #b45309; font-weight: 600; }
+  }
+
+  &__ticket-choice { display: flex; gap: 6px; }
+  &__ticket-btn {
+    flex: 1; padding: 5px; border: 1px solid #ddd; border-radius: 5px;
+    background: #fff; font-size: 11px; cursor: pointer; color: #555;
+    &:hover { border-color: #e53935; }
+    &--activo { border-color: #e53935; background: #fff1f2; color: #b91c1c; font-weight: 600; }
+  }
+
+  &__condicion-row {
+    display: flex; gap: 4px;
+  }
+
+  &__select {
+    padding: 5px 6px; border: 1px solid #ddd; border-radius: 5px;
+    font-size: 11px; font-family: inherit; color: #333;
+    background: #fff; cursor: pointer;
+    &:focus { outline: none; border-color: #ea580c; }
+  }
+
+  // ── Ramas (botones / lista / condicion) ──
+  &__branches {
+    border-top: 1px solid rgba(0,0,0,.07);
+    padding: 7px 8px;
+    display: flex; flex-direction: column; gap: 4px;
+    cursor: default;
+    overflow: visible !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+
+    input {
+      pointer-events: auto !important;
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    button {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+    }
+
+    &--condicion { gap: 2px; }
+  }
+
+  &__branches-title {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .5px; color: #888; margin-bottom: 2px;
+    display: flex; justify-content: space-between; align-items: center;
+    .nodo--wp-botones & { color: #075e54; }
+    .nodo--wp-lista   & { color: #3b82f6; }
+  }
+
+  &__branches-hint {
+    font-size: 9px; font-weight: 400; color: #bbb; font-style: italic;
+    text-transform: none; letter-spacing: 0;
+  }
+
+  // Grid de dos columnas: [contenido de rama] [puerto de salida]
+  // Cada iteración @for produce un par de celdas en la misma fila
+  &__branches-grid {
+    display: grid;
+    grid-template-columns: 1fr 20px;
     align-items: center;
-    gap: 6px;
-    padding: 8px 10px;
-    border-bottom: 1px solid #f0f0f0;
+    gap: 4px 0;
+    overflow: visible !important;
   }
 
-  &__icon {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    border-radius: 50%;
-    background: #1a1a2e;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    font-size: 13px;
-    font-weight: 700;
-    line-height: 1;
+  &__branch-port {
+    display: flex; align-items: center; justify-content: center;
+    overflow: visible !important;
 
-    .nodo--sms      & { background: #e57c00; }
-    .nodo--email    & { background: #1565c0; }
-    .nodo--whatsapp & { background: #25d366; }
+    .connector--branch {
+      pointer-events: auto !important;
+      cursor: crosshair !important;
+    }
   }
 
-  &__type { font-size: 12px; font-weight: 600; flex: 1; }
-
-  &__advertencia {
-    font-size: 12px;
-    color: #e57c00;
-    flex-shrink: 0;
-    cursor: help;
+  &__branch-row {
+    display: flex; align-items: center; gap: 4px; padding: 2px 0;
+    &--si { padding: 3px 0; }
+    &--no { padding: 3px 0; }
   }
 
-  &__body {
-    padding: 6px 10px;
-    font-size: 11px;
-    color: #666;
-    min-height: 24px;
-
-    &--sms        { font-style: italic; }
-    &--email      { font-style: italic; color: #1565c0; }
-    &--whatsapp   { font-style: italic; color: #1a8a47; }
-    &--advertencia { color: #e57c00; font-style: italic; }
+  &__branch-input {
+    flex: 1; min-width: 0; padding: 5px 7px;
+    border: 1px solid #ddd; border-radius: 4px;
+    font-size: 11px; font-family: inherit; color: #333;
+    &:focus { outline: none; border-color: #25d366; }
+    .nodo--wp-lista & { &:focus { border-color: #3b82f6; } }
   }
 
-  &__aviso {
-    color: #e57c00;
-    font-size: 11px;
-    font-style: italic;
+  &__branch-del {
+    background: none; border: none; cursor: pointer;
+    color: #ccc; font-size: 14px; padding: 0 2px; flex-shrink: 0;
+    &:hover { color: #c62828; }
   }
 
+  &__branch-fixed {
+    flex: 1; font-size: 12px; font-weight: 600; padding: 3px 6px; border-radius: 4px;
+    &--si { color: #1a8a47; background: #f0fdf4; }
+    &--no { color: #c62828; background: #fff1f2; }
+  }
+
+  &__add-branch {
+    background: none; border: 1px dashed #ddd; border-radius: 5px;
+    color: #999; font-size: 11px; padding: 5px; cursor: pointer; width: 100%; text-align: center;
+    &:hover { background: #f5f5f5; border-color: #aaa; color: #555; }
+    .nodo--wp-botones & { &:hover { border-color: #075e54; color: #075e54; background: #ecfdf5; } }
+    .nodo--wp-lista   & { &:hover { border-color: #3b82f6; color: #3b82f6; background: #eff6ff; } }
+  }
+
+  // ── Conectores (puertos foblex) ──
   &__connectors {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 8px;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 10px; border-top: 1px solid rgba(0,0,0,.05);
+
+    &--in-only { justify-content: flex-start; gap: 8px; }
+  }
+
+  &__conn-label {
+    font-size: 9px; color: #bbb; text-transform: uppercase; letter-spacing: .5px;
+  }
+
+  &__terminal-badge {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    color: #e53935; border: 1px solid #e53935; border-radius: 4px; padding: 2px 6px;
   }
 }
 
+// ────────────────────────────────────────────────────────
+// Conectores (puertos foblex)
+// ────────────────────────────────────────────────────────
 .connector {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid #999;
-  background: #fff;
-  cursor: crosshair;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid #bbb; background: #fff;
+  cursor: crosshair; flex-shrink: 0; transition: transform .1s;
+  &:hover { transform: scale(1.35); }
 
-  &--in { background: #e8f4ff; border-color: #4a90e2; }
+  &--in  { background: #e8f4ff; border-color: #4a90e2; }
   &--out { background: #fff0e8; border-color: #e57c00; }
+
+  &--branch { background: #25d366; border-color: #1da851; width: 12px; height: 12px; }
+  &--si     { background: #1a8a47 !important; border-color: #155e32 !important; }
+  &--no     { background: #e53935 !important; border-color: #b71c1c !important; }
 }
 
+// ────────────────────────────────────────────────────────
+// Panel derecho (solo filtros de segmento)
+// ────────────────────────────────────────────────────────
 .config-panel {
-  width: 360px;
-  min-width: 280px;
-  max-width: 600px;
-  background: #fff;
-  border-left: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  overflow: hidden;
-  position: relative;
+  width: 360px; min-width: 280px; max-width: 600px;
+  background: #fff; border-left: 1px solid #e0e0e0;
+  display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; position: relative;
 
   &__resizer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 100%;
-    cursor: col-resize;
-    background: transparent;
-    z-index: 10;
+    position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+    cursor: col-resize; background: transparent; z-index: 10;
     &:hover { background: rgba(26,26,46,.15); }
   }
 
   &__header {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #e0e0e0;
-    flex-shrink: 0;
-
+    display: flex; align-items: center; padding: 12px 16px;
+    border-bottom: 1px solid #e0e0e0; flex-shrink: 0;
     h3 { flex: 1; font-size: 14px; font-weight: 600; }
   }
 
   &__body {
-    padding: 16px;
-    overflow-y: auto;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    padding: 16px; overflow-y: auto; flex: 1;
+    display: flex; flex-direction: column; gap: 12px;
   }
+
+  &--conexiones { width: 240px; min-width: 200px; }
 }
+
+.config-panel__icono { font-size: 16px; margin-right: 4px; line-height: 1; }
 
 .config-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  color: #999;
-  font-weight: 600;
+  font-size: 11px; text-transform: uppercase; color: #999; font-weight: 600; margin: 0;
 }
 
-.config-panel__icono {
-  font-size: 16px;
-  margin-right: 4px;
-  line-height: 1;
+.config-hint {
+  font-size: 10px; color: #bbb; font-style: italic; margin: 0;
 }
 
-.wp-tipo-toggle {
-  display: flex;
-  gap: 6px;
-}
-
-.wp-tipo-btn {
-  flex: 1;
-  padding: 7px 10px;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  background: #fff;
-  color: #666;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all .15s;
-
-  &:hover { border-color: #25d366; color: #1a8a47; }
-
-  &--activo {
-    border-color: #25d366;
-    background: #f0fdf4;
-    color: #1a8a47;
-    font-weight: 600;
-  }
-}
-
-.wp-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-  &:focus { outline: none; border-color: #25d366; }
-}
-
-.wp-textarea {
-  width: 100%;
-  min-height: 110px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-  resize: vertical;
-  &:focus { outline: none; border-color: #25d366; }
-}
-
-.wp-hint {
-  font-size: 11px;
-  color: #999;
-  margin-top: -6px;
-}
-
-.wp-hint-inline {
-  font-weight: 400;
-  color: #bbb;
-  font-size: 10px;
-  text-transform: none;
-}
-
-.chip--wp {
-  border-color: #25d366;
-  background: #f0fdf4;
-  color: #1a8a47;
-  &:hover { background: #dcfce7; }
-}
-
-.palette__icon--whatsapp { background: #25d366; }
-
-.email-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-  &:focus { outline: none; border-color: #1565c0; }
-}
-
-.email-textarea {
-  width: 100%;
-  min-height: 140px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  font-family: inherit;
-  resize: vertical;
-  &:focus { outline: none; border-color: #1565c0; }
-}
-
-.sms-textarea {
-  width: 100%;
-  min-height: 100px;
-  padding: 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 13px;
-  resize: vertical;
-
-  &--error { border-color: #c62828; }
+.config-hint-inline {
+  font-weight: 400; color: #bbb; font-size: 10px; text-transform: none;
 }
 
 .variables-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 6px;
+  display: flex; flex-wrap: wrap; gap: 4px;
 }
 
 .chip {
-  padding: 2px 8px;
-  border: 1px solid #e57c00;
-  border-radius: 12px;
-  background: #fff8f0;
-  color: #e57c00;
-  font-size: 11px;
-  font-family: monospace;
-  cursor: pointer;
-  white-space: nowrap;
+  padding: 2px 8px; border: 1px solid #e57c00; border-radius: 12px;
+  background: #fff8f0; color: #e57c00; font-size: 11px; font-family: monospace;
+  cursor: pointer; white-space: nowrap;
   &:hover { background: #ffe0b2; }
+  &--wp { border-color: #25d366; background: #f0fdf4; color: #1a8a47; &:hover { background: #dcfce7; } }
 }
 
 .sms-preview {
-  background: #f8f8ff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 8px 10px;
-
-  &__texto {
-    font-size: 12px;
-    color: #444;
-    line-height: 1.5;
-    white-space: pre-wrap;
-  }
+  background: #f8f8ff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 10px;
+  &__texto { font-size: 12px; color: #444; line-height: 1.5; white-space: pre-wrap; }
 }
 
-.sms-contador {
-  font-size: 11px;
-  color: #999;
-  text-align: right;
+.panel-textarea {
+  width: 100%; min-height: 80px; padding: 7px 10px;
+  border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit;
+  resize: vertical;
+  &:focus { outline: none; border-color: #7c3aed; }
+}
 
-  &--error { color: #c62828; font-weight: 600; }
+.panel-info {
+  background: #f8f8ff; border: 1px solid #e8e8ff; border-radius: 8px; padding: 10px 12px;
+  font-size: 12px; color: #444; line-height: 1.7;
+  p { margin: 0; }
+}
+
+.nombre-nodo {
+  display: flex; flex-direction: column; gap: 5px;
+  &__input {
+    padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 13px; font-family: inherit;
+    &:focus { outline: none; border-color: #1a1a2e; }
+  }
 }
 
 .audiencia {
-  background: #f8f8ff;
-  border-radius: 6px;
-  padding: 10px;
-
+  background: #f8f8ff; border-radius: 6px; padding: 10px;
   &__total { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
-
-  &__item {
-    font-size: 12px;
-    padding: 4px 0;
-    border-bottom: 1px solid #eee;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
+  &__item { font-size: 12px; padding: 4px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 2px; }
   &__email { color: #999; font-size: 11px; }
 }
 
-.btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
+.conexion-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border: 1px solid #f0f0f0; border-radius: 6px;
+  background: #fafafa; gap: 8px; margin-bottom: 4px;
+  &__label { font-size: 12px; color: #444; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  &__rama  { color: #25d366; font-style: italic; font-size: 11px; font-weight: 600; }
+}
 
-  &--primary { background: #1a1a2e; color: #fff; &:hover { background: #2a2a4e; } &:disabled { opacity: .5; cursor: not-allowed; } }
+// ────────────────────────────────────────────────────────
+// Botones
+// ────────────────────────────────────────────────────────
+.btn {
+  padding: 7px 14px; border: none; border-radius: 6px; cursor: pointer;
+  font-size: 13px; font-weight: 500;
+  &--primary   { background: #1a1a2e; color: #fff; &:hover { background: #2a2a4e; } &:disabled { opacity: .5; cursor: not-allowed; } }
   &--secondary { background: #f0f0f0; color: #1a1a2e; &:hover { background: #e0e0e0; } &:disabled { opacity: .5; cursor: not-allowed; } }
-  &--full { width: 100%; }
+  &--activar   { background: #1a7f37; color: #fff; &:hover { background: #116329; } &:disabled { opacity: .5; cursor: not-allowed; } }
+  &--full      { width: 100%; }
+  &--ghost     { background: #fff; border: 1px solid #ddd; color: #555; border-radius: 6px; &:hover { background: #f5f5f5; } }
 }
 
 .btn--outline-dark {
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  color: #555;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
+  padding: 5px 12px; border: 1px solid #ccc; border-radius: 6px;
+  background: #fff; color: #555; cursor: pointer; font-size: 12px; font-weight: 500;
   &:hover { border-color: #1a1a2e; color: #1a1a2e; }
 }
 
+.btn-back {
+  background: none; border: none; cursor: pointer; color: #666; font-size: 13px;
+  &:hover { color: #1a1a2e; }
+}
+
 .btn-edit-camp {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #999;
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  flex-shrink: 0;
+  background: none; border: none; cursor: pointer; color: #999;
+  font-size: 14px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
   &:hover { color: #1a1a2e; background: #f0f0f0; }
 }
 
+.btn-close {
+  background: none; border: none; cursor: pointer; color: #999; font-size: 16px;
+  &:hover { color: #333; }
+}
+
+.btn-delete {
+  background: none; border: none; cursor: pointer; font-size: 14px;
+  padding: 2px 4px; border-radius: 4px; opacity: .6;
+  &:hover { opacity: 1; background: #fff0f0; }
+}
+
+.btn--status {
+  padding: 5px 12px; border-radius: 20px; border: 2px solid;
+  cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s;
+  &:disabled { opacity: .6; cursor: not-allowed; }
+  &-active { background: #e6f4ea; border-color: #2e7d32; color: #2e7d32; &:hover:not(:disabled) { background: #c8e6c9; } }
+  &-draft  { background: #f5f5f5; border-color: #999; color: #666; &:hover:not(:disabled) { background: #eee; border-color: #555; color: #333; } }
+}
+
+// ────────────────────────────────────────────────────────
+// Etiquetas sobre las líneas de conexión
+// foblex proyecta el contenido de <f-connection> en el punto
+// central de cada línea, por eso .arista-label flota ahí.
+// ────────────────────────────────────────────────────────
+.arista-label {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+  pointer-events: none;
+  line-height: 1.6;
+  letter-spacing: .2px;
+}
+
+// ────────────────────────────────────────────────────────
+// Estilos globales de las líneas foblex (necesita ::ng-deep
+// porque el SVG lo renderiza foblex fuera del shadow del componente)
+// ────────────────────────────────────────────────────────
+::ng-deep {
+  // Línea base — más gruesa y con color neutro oscuro
+  .f-connection path,
+  .f-connection line,
+  .f-connection polyline {
+    stroke: #6b7280 !important;
+    stroke-width: 1.8px !important;
+  }
+
+  // La línea mientras se está dibujando (drag en curso)
+  .f-connection-for-create path,
+  .f-connection-for-create line {
+    stroke: #4a90e2 !important;
+    stroke-width: 2px !important;
+    stroke-dasharray: 6 3 !important;
+  }
+}
+
+.badge-locale {
+  font-size: 10px; font-weight: 700; letter-spacing: .5px;
+  background: #e8f0fe; color: #1967d2; border-radius: 4px; padding: 2px 6px; flex-shrink: 0;
+}
+
+.status-msg {
+  font-size: 12px; font-weight: 500; padding: 4px 10px;
+  border-radius: 4px; animation: fadeIn .2s ease;
+  &--error { color: #c62828; background: #fff0f0; }
+  &--exito { color: #2e7d32; background: #e6f4ea; }
+}
+
+// ────────────────────────────────────────────────────────
+// Modal campaña
+// ────────────────────────────────────────────────────────
 .modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 200;
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
 }
 
 .modal {
   background: #fff; border-radius: 10px;
-  width: 100%; max-width: 480px;
-  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+  width: 100%; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,.18);
 
   &__header {
     display: flex; align-items: center; justify-content: space-between;
@@ -505,18 +609,9 @@
     h3 { font-size: 17px; font-weight: 600; }
   }
 
-  &__close {
-    background: none; border: none; font-size: 18px;
-    cursor: pointer; color: #999;
-    &:hover { color: #333; }
-  }
-
-  &__body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
-
-  &__footer {
-    display: flex; justify-content: flex-end; gap: 8px;
-    padding: 16px 24px; border-top: 1px solid #f0f0f0;
-  }
+  &__close { background: none; border: none; font-size: 18px; cursor: pointer; color: #999; &:hover { color: #333; } }
+  &__body  { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  &__footer { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px; border-top: 1px solid #f0f0f0; }
 }
 
 .field {
@@ -530,132 +625,15 @@
   }
 }
 
-.btn--ghost { background: #fff; border: 1px solid #ddd; color: #555; cursor: pointer; border-radius: 6px; padding: 8px 16px; font-size: 13px; &:hover { background: #f5f5f5; } }
-
-.btn-close {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #999;
-  font-size: 16px;
-  &:hover { color: #333; }
-}
-
-.btn-delete {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 4px;
-  border-radius: 4px;
-  opacity: .6;
-  &:hover { opacity: 1; background: #fff0f0; }
-}
-
-.nombre-nodo {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-
-  &__input {
-    padding: 7px 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 13px;
-    font-family: inherit;
-    &:focus { outline: none; border-color: #1a1a2e; box-shadow: 0 0 0 2px rgba(26,26,46,.08); }
-  }
-}
-
-.conexion-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
-  border: 1px solid #f0f0f0;
-  border-radius: 6px;
-  background: #fafafa;
-  gap: 8px;
-
-  &__label {
-    font-size: 12px;
-    color: #444;
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
-.config-panel--conexiones {
-  width: 260px;
-  min-width: 200px;
-}
-
-.hint-delete {
-  font-size: 12px;
-  color: #c62828;
-  background: #fff0f0;
-  border: 1px solid #f5c6cb;
-  padding: 4px 10px;
-  border-radius: 4px;
-
-  kbd {
-    font-family: monospace;
-    background: #c62828;
-    color: #fff;
-    padding: 1px 5px;
-    border-radius: 3px;
-    font-size: 11px;
-  }
-}
-
-.btn--status {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 2px solid;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all .15s;
-
-  &:disabled { opacity: .6; cursor: not-allowed; }
-
-  &-active {
-    background: #e6f4ea;
-    border-color: #2e7d32;
-    color: #2e7d32;
-    &:hover:not(:disabled) { background: #c8e6c9; }
-  }
-
-  &-draft {
-    background: #f5f5f5;
-    border-color: #999;
-    color: #666;
-    &:hover:not(:disabled) { background: #eeeeee; border-color: #555; color: #333; }
-  }
-}
-
-.error-msg { color: #c62828; font-size: 12px; }
-
-.status-msg {
-  font-size: 12px;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: 4px;
-  animation: fadeIn .2s ease;
-
-  &--error { color: #c62828; background: #fff0f0; }
-  &--exito { color: #2e7d32; background: #e6f4ea; }
-}
-
+// ────────────────────────────────────────────────────────
+// Animaciones
+// ────────────────────────────────────────────────────────
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseError {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(198, 40, 40, .25); }
-  50%       { box-shadow: 0 0 0 5px rgba(198, 40, 40, .45); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(198,40,40,.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(198,40,40,.45); }
 }

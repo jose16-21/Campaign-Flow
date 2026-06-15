@@ -7,6 +7,7 @@ export interface CampaignRepositoryPort {
   actualizar(id: number, payload: Partial<CreateCampaignPayload>): Promise<Campaign>;
   eliminar(id: number): Promise<void>;
   guardarCanvas(id: number, canvas: Canvas): Promise<Campaign>;
+  activar(id: number): Promise<unknown>;
 }
 
 export const CAMPAIGN_REPOSITORY_PORT = 'CAMPAIGN_REPOSITORY_PORT';

@@ -32,6 +32,7 @@ model Campaign {
   description String?
   status      CampaignStatus @default(DRAFT)
   locale      String         @default("es")
+  owner_id    String         @default("1107b43e-997a-42f9-9101-9e238d4ccef8")
   canvas      Json           @default("{\"nodes\":[],\"edges\":[]}")
   created_at  DateTime       @default(now())
 

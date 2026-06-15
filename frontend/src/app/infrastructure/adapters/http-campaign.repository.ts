@@ -33,4 +33,8 @@ export class HttpCampaignRepository implements CampaignRepositoryPort {
   guardarCanvas(id: number, canvas: Canvas): Promise<Campaign> {
     return firstValueFrom(this.http.put<Campaign>(`${this.base}/${id}/canvas`, canvas));
   }
+
+  activar(id: number): Promise<unknown> {
+    return firstValueFrom(this.http.post<unknown>(`${this.base}/${id}/activate`, {}));
+  }
 }

@@ -63,6 +63,15 @@ export class CampaignsController {
     await this.campaignsService.eliminar(id);
   }
 
+  @Post(':id/activate')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Activar campaña', description: 'Resuelve la audiencia, crea el flujo en los microservicios y envía los mensajes iniciales.' })
+  @ApiResponse({ status: 200, description: 'Campaña activada y mensajes enviados' })
+  @ApiResponse({ status: 404, description: 'Campaña no encontrada' })
+  activar(@Param('id', ParseIntPipe) id: number) {
+    return this.campaignsService.activar(id);
+  }
+
   @Put(':id/canvas')
   @ApiTags('Canvas')
   @ApiOperation({

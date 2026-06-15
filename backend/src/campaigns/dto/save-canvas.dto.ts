@@ -32,6 +32,14 @@ export class CanvasEdgeDto {
   @IsString()
   @IsNotEmpty()
   target!: string;
+
+  @IsOptional()
+  @IsString()
+  condicion?: string;
+
+  @IsOptional()
+  @IsString()
+  etiqueta?: string;
 }
 
 export class SaveCanvasDto {
