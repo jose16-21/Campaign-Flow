@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum EstadoCampaña {
@@ -21,4 +21,10 @@ export class CreateCampaignDto {
   @IsOptional()
   @IsEnum(EstadoCampaña)
   status?: EstadoCampaña;
+
+  @ApiPropertyOptional({ example: 'es', default: 'es', description: 'Código de idioma BCP-47 (es, en, pt…)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  locale?: string;
 }

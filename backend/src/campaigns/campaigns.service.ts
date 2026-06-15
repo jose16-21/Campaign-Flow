@@ -20,6 +20,7 @@ export class CampaignsService {
         name: true,
         description: true,
         status: true,
+        locale: true,
         created_at: true,
       },
       orderBy: { created_at: 'desc' },

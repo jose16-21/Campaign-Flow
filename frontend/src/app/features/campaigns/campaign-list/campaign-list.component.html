@@ -92,6 +92,19 @@
             [ngModel]="form().description"
             (ngModelChange)="setDescripcion($event)"></textarea>
         </div>
+
+        <div class="field">
+          <label class="field__label" for="camp-locale">Idioma</label>
+          <select
+            id="camp-locale"
+            class="field__input"
+            [ngModel]="form().locale"
+            (ngModelChange)="setLocale($event)">
+            @for (l of locales; track l.code) {
+              <option [value]="l.code">{{ l.label }}</option>
+            }
+          </select>
+        </div>
       </div>
 
       <div class="modal__footer">
