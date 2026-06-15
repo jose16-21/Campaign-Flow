@@ -27,6 +27,9 @@ import type {
   EmailNodeConfig,
   WhatsappNodeConfig,
   WhatsappTipo,
+  WhatsappBoton,
+  WhatsappSeccion,
+  WhatsappOpcion,
 } from '../../../domain/models/campaign.model';
 import { TIPOS_ACCION, ICONO_NODO, LABEL_NODO, LOCALES_DISPONIBLES } from '../../../domain/models/campaign.model';
 import type { FilterGroup }    from '../../../domain/models/filter-tree.model';
@@ -38,14 +41,38 @@ import {
   resolverVariablesEjemplo,
 } from '../../../domain/models/sms-variables.model';
 
-type PaletteItem = { type: 'segment' | 'sms' | 'email' | 'whatsapp'; label: string; icon: string };
+type PaletteItem = {
+  type: 'segment' | 'sms' | 'email' | 'whatsapp';
+  label: string;
+  icon: string;
+  wpTipo?: WhatsappTipo;
+  section?: 'base' | 'wp';
+};
 
 const PALETA: PaletteItem[] = [
-  { type: 'segment',  label: 'Segmento',  icon: ICONO_NODO.segment  },
-  { type: 'sms',      label: 'SMS',       icon: ICONO_NODO.sms      },
-  { type: 'email',    label: 'Email',     icon: ICONO_NODO.email    },
-  { type: 'whatsapp', label: 'WhatsApp',  icon: ICONO_NODO.whatsapp },
+  // Nodos base
+  { type: 'segment',  label: 'Segmento',     icon: ICONO_NODO.segment, section: 'base' },
+  { type: 'sms',      label: 'SMS',          icon: ICONO_NODO.sms,     section: 'base' },
+  { type: 'email',    label: 'Email',        icon: ICONO_NODO.email,   section: 'base' },
+  // Nodos WhatsApp (cada uno es su propio tipo de nodo)
+  { type: 'whatsapp', label: 'WP Texto',     icon: '💬', wpTipo: 'texto',     section: 'wp' },
+  { type: 'whatsapp', label: 'WP Botones',   icon: '🔘', wpTipo: 'botones',   section: 'wp' },
+  { type: 'whatsapp', label: 'WP Lista',     icon: '📜', wpTipo: 'lista',     section: 'wp' },
+  { type: 'whatsapp', label: 'WP Media',     icon: '🖼',  wpTipo: 'media',     section: 'wp' },
+  { type: 'whatsapp', label: 'WP Template',  icon: '📋', wpTipo: 'template',  section: 'wp' },
+  { type: 'whatsapp', label: 'WP Condición', icon: '⬦',  wpTipo: 'condicion', section: 'wp' },
+  { type: 'whatsapp', label: 'WP Ticket',    icon: '🎫', wpTipo: 'ticket',    section: 'wp' },
 ];
+
+const WP_TIPO_META: Record<WhatsappTipo, { label: string; icon: string; color: string; bgColor: string }> = {
+  texto:     { label: 'WP Texto',      icon: '💬', color: '#1a8a47', bgColor: '#f0fdf4' },
+  template:  { label: 'WP Template',   icon: '📋', color: '#7c3aed', bgColor: '#f5f3ff' },
+  botones:   { label: 'WP Botones',    icon: '🔘', color: '#075e54', bgColor: '#ecfdf5' },
+  lista:     { label: 'WP Lista',      icon: '📜', color: '#0369a1', bgColor: '#f0f9ff' },
+  media:     { label: 'WP Media',      icon: '🖼',  color: '#b45309', bgColor: '#fffbeb' },
+  ticket:    { label: 'WP Ticket',     icon: '🎫', color: '#b91c1c', bgColor: '#fff1f2' },
+  condicion: { label: 'Condición',     icon: '⬦',  color: '#b45309', bgColor: '#fff7ed' },
+};
 
 @Component({
   selector: 'app-campaign-editor',
@@ -67,6 +94,7 @@ export class CampaignEditorComponent implements OnInit {
   readonly aristas           = signal<CanvasEdge[]>([]);
   readonly nodoActivo        = signal<CanvasNode | null>(null);
   readonly guardando         = signal(false);
+  readonly activando         = signal(false);
   readonly cambiandoEstado   = signal(false);
   readonly editandoNombre    = signal(false);
   readonly error             = signal<string | null>(null);
@@ -77,10 +105,13 @@ export class CampaignEditorComponent implements OnInit {
   readonly cargandoAudiencia = signal(false);
 
   readonly paleta              = PALETA;
+  readonly paletaBase          = PALETA.filter(i => i.section === 'base');
+  readonly paletaWp            = PALETA.filter(i => i.section === 'wp');
   readonly variablesDisponibles = SMS_VARIABLES;
   readonly iconoNodo           = ICONO_NODO;
   readonly labelNodo           = LABEL_NODO;
   readonly locales             = LOCALES_DISPONIBLES;
+  readonly wpTipoMeta          = WP_TIPO_META;
   private nextId = 1;
   private smsTextareaRef: HTMLTextAreaElement | null = null;
 
@@ -127,20 +158,34 @@ export class CampaignEditorComponent implements OnInit {
     if (!evento.data) return;
     const id  = `node-${this.nextId++}`;
     const pos = evento.dropPosition ?? { x: 200, y: 200 };
-    const config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig =
-      evento.data.type === 'segment'
-        ? { filters: { op: 'AND', conditions: [] } }
-        : evento.data.type === 'email'
-          ? { subject: '', body: '' }
-          : evento.data.type === 'whatsapp'
-            ? { tipo: 'texto', mensaje: '', templateNombre: '', templateParams: [] }
-            : { message: '' };
-
+    let config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig;
+    if (evento.data.type === 'segment') {
+      config = { filters: { op: 'AND', conditions: [] } };
+    } else if (evento.data.type === 'email') {
+      config = { subject: '', body: '' };
+    } else if (evento.data.type === 'whatsapp') {
+      config = this.buildWpConfig(evento.data.wpTipo ?? 'texto');
+    } else {
+      config = { message: '' };
+    }
     this.posiciones.set(id, pos);
-    this.nodos.update(n => [
-      ...n,
-      { id, type: evento.data.type, x: pos.x, y: pos.y, config },
-    ]);
+    this.nodos.update(n => [...n, { id, type: evento.data.type, x: pos.x, y: pos.y, config }]);
+  }
+
+  private buildWpConfig(tipo: WhatsappTipo): WhatsappNodeConfig {
+    const base: WhatsappNodeConfig = { tipo };
+    if (tipo === 'botones') {
+      base.botones = [
+        { id: `btn_${Date.now()}`,     texto: '' },
+        { id: `btn_${Date.now() + 1}`, texto: '' },
+      ];
+    }
+    if (tipo === 'lista') {
+      base.secciones = [{ titulo: '', opciones: [{ id: `opt_${Date.now()}`, titulo: '' }] }];
+    }
+    if (tipo === 'media')     base.mediaType = 'image';
+    if (tipo === 'condicion') { base.condicionCampo = ''; base.condicionOperador = 'eq'; base.condicionValor = ''; }
+    return base;
   }
 
   // Solo actualiza el Map plano — sin signal → sin change detection → sin resetear posición
@@ -152,30 +197,199 @@ export class CampaignEditorComponent implements OnInit {
 
   onCrearConexion(evento: FCreateConnectionEvent): void {
     if (!evento.targetId) return;
-    let sourceId = evento.sourceId.replace('_out', '');
-    let targetId = evento.targetId.replace('_in', '');
-    if (sourceId === targetId) return;
 
-    // Auto-corregir dirección invertida: si el usuario arrastró acción → Segmento,
-    // se invierte para que siempre quede Segmento → acción
-    const sourceNodo = this.nodos().find(n => n.id === sourceId);
-    const targetNodo = this.nodos().find(n => n.id === targetId);
+    // outputId format:  "node-3_out"  (lineal)
+    //                   "node-3__btn_1__out"  (botón/opción — doble guión)
+    let sourceNodeId: string;
+    let condicion: string | undefined;
+
+    const rawSource = evento.sourceId;
+    if (rawSource.includes('__')) {
+      const parts = rawSource.split('__');
+      sourceNodeId = parts[0];
+      condicion    = parts[1];
+    } else {
+      sourceNodeId = rawSource.replace('_out', '');
+    }
+
+    const targetNodeId = evento.targetId.replace('_in', '');
+    if (sourceNodeId === targetNodeId) return;
+
+    // Auto-corregir dirección invertida acción → Segmento
+    const sourceNodo = this.nodos().find(n => n.id === sourceNodeId);
+    const targetNodo = this.nodos().find(n => n.id === targetNodeId);
     if (sourceNodo && TIPOS_ACCION.includes(sourceNodo.type) && targetNodo?.type === 'segment') {
-      [sourceId, targetId] = [targetId, sourceId];
+      // No invertir si tiene condicion (ya es intencional)
+      if (!condicion) {
+        const arista: CanvasEdge = { source: targetNodeId, target: sourceNodeId };
+        if (!this.aristas().some(a => a.source === arista.source && a.target === arista.target && !a.condicion)) {
+          this.aristas.update(a => [...a, arista]);
+        }
+        return;
+      }
+    }
+
+    // Obtener etiqueta del botón/opción/condicion
+    let etiqueta: string | undefined;
+    if (condicion && sourceNodo?.type === 'whatsapp') {
+      const c = this.whatsappConfig(sourceNodo);
+      if (c.tipo === 'condicion') {
+        etiqueta = condicion === 'si' ? '✓ Sí' : '✗ No';
+      } else {
+        etiqueta = c.botones?.find(b => b.id === condicion)?.texto;
+        if (!etiqueta) {
+          for (const sec of c.secciones ?? []) {
+            const opt = sec.opciones.find(o => o.id === condicion);
+            if (opt) { etiqueta = opt.titulo; break; }
+          }
+        }
+      }
     }
 
     const existe = this.aristas().some(
-      a => a.source === sourceId && a.target === targetId,
+      a => a.source === sourceNodeId && a.target === targetNodeId && a.condicion === condicion,
     );
     if (!existe) {
-      this.aristas.update(a => [...a, { source: sourceId, target: targetId }]);
+      this.aristas.update(a => [...a, { source: sourceNodeId, target: targetNodeId, condicion, etiqueta }]);
     }
   }
 
   seleccionarNodo(nodo: CanvasNode): void {
-    this.nodoActivo.set(this.nodoActivo()?.id === nodo.id ? null : nodo);
+    // Toggle para segmento (abre/cierra panel de filtros); para otros solo resaltar
+    if (nodo.type === 'segment') {
+      this.nodoActivo.set(this.nodoActivo()?.id === nodo.id ? null : nodo);
+    } else {
+      this.nodoActivo.set(nodo);
+    }
     this.audiencia.set(null);
-    this.conexionesSeleccionadas.set([]); // limpiar selección de conexión al abrir panel
+    this.conexionesSeleccionadas.set([]);
+  }
+
+  // ── Métodos inline: toman el nodo directamente (sin usar nodoActivo) ──
+
+  private actualizarNodoDirecto(nodo: CanvasNode, config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig): void {
+    const actualizado = { ...nodo, config };
+    this.nodos.update(ns => ns.map(n => n.id === nodo.id ? actualizado : n));
+    if (this.nodoActivo()?.id === nodo.id) this.nodoActivo.set(actualizado);
+  }
+
+  actualizarCampoWp(nodo: CanvasNode, campo: keyof WhatsappNodeConfig, valor: unknown): void {
+    const c = this.whatsappConfig(nodo);
+    this.actualizarNodoDirecto(nodo, { ...c, [campo]: valor } as WhatsappNodeConfig);
+  }
+
+  actualizarTextoBotonDeNodo(nodo: CanvasNode, idx: number, texto: string): void {
+    const c = this.whatsappConfig(nodo);
+    const botones = (c.botones ?? []).map((b, i) => i === idx ? { ...b, texto } : b);
+    const btnId = c.botones?.[idx]?.id;
+    if (btnId) {
+      this.aristas.update(as => as.map(a =>
+        a.source === nodo.id && a.condicion === btnId ? { ...a, etiqueta: texto } : a
+      ));
+    }
+    this.actualizarCampoWp(nodo, 'botones', botones);
+  }
+
+  actualizarTituloOpcionDeNodo(nodo: CanvasNode, secIdx: number, optIdx: number, titulo: string): void {
+    const c = this.whatsappConfig(nodo);
+    const optId = c.secciones?.[secIdx]?.opciones?.[optIdx]?.id;
+    const secciones: WhatsappSeccion[] = (c.secciones ?? []).map((s, i) =>
+      i === secIdx ? { ...s, opciones: s.opciones.map((o, j) => j === optIdx ? { ...o, titulo } : o) } : s
+    );
+    if (optId) {
+      this.aristas.update(as => as.map(a =>
+        a.source === nodo.id && a.condicion === optId ? { ...a, etiqueta: titulo } : a
+      ));
+    }
+    this.actualizarCampoWp(nodo, 'secciones', secciones);
+  }
+
+  agregarBotonDeNodo(nodo: CanvasNode): void {
+    const c = this.whatsappConfig(nodo);
+    const botones = [...(c.botones ?? [])];
+    if (botones.length >= 3) return;
+    botones.push({ id: `btn_${Date.now()}`, texto: '' });
+    this.actualizarCampoWp(nodo, 'botones', botones);
+  }
+
+  eliminarBotonDeNodo(nodo: CanvasNode, idx: number): void {
+    const c = this.whatsappConfig(nodo);
+    const eliminado = c.botones?.[idx];
+    const botones = (c.botones ?? []).filter((_, i) => i !== idx);
+    if (eliminado) {
+      this.aristas.update(as => as.filter(a => !(a.source === nodo.id && a.condicion === eliminado.id)));
+    }
+    this.actualizarCampoWp(nodo, 'botones', botones);
+  }
+
+  agregarOpcionDeNodo(nodo: CanvasNode): void {
+    const c = this.whatsappConfig(nodo);
+    const secciones = (c.secciones ?? []).length
+      ? (c.secciones ?? []).map((s, i) =>
+          i === 0 ? { ...s, opciones: [...s.opciones, { id: `opt_${Date.now()}`, titulo: '' }] } : s
+        )
+      : [{ titulo: '', opciones: [{ id: `opt_${Date.now()}`, titulo: '' }] }];
+    this.actualizarCampoWp(nodo, 'secciones', secciones);
+  }
+
+  eliminarOpcionDeNodo(nodo: CanvasNode, secIdx: number, optIdx: number): void {
+    const c = this.whatsappConfig(nodo);
+    const eliminada = c.secciones?.[secIdx]?.opciones?.[optIdx];
+    const secciones: WhatsappSeccion[] = (c.secciones ?? []).map((s, i) =>
+      i === secIdx ? { ...s, opciones: s.opciones.filter((_, j) => j !== optIdx) } : s
+    );
+    if (eliminada) {
+      this.aristas.update(as => as.filter(a => !(a.source === nodo.id && a.condicion === eliminada.id)));
+    }
+    this.actualizarCampoWp(nodo, 'secciones', secciones);
+  }
+
+  actualizarTipoWpDeNodo(nodo: CanvasNode, tipo: WhatsappTipo): void {
+    const base = this.whatsappConfig(nodo);
+    if ((base.tipo === 'botones' || base.tipo === 'lista') && tipo !== base.tipo) {
+      this.aristas.update(as => as.filter(a => !(a.source === nodo.id && a.condicion)));
+    }
+    const nuevo: WhatsappNodeConfig = { tipo, mensaje: base.mensaje };
+    if (tipo === 'botones') {
+      nuevo.botones = base.botones?.length
+        ? base.botones
+        : [{ id: `btn_${Date.now()}`, texto: '' }, { id: `btn_${Date.now() + 1}`, texto: '' }];
+    }
+    if (tipo === 'lista') {
+      nuevo.secciones = base.secciones?.length
+        ? base.secciones
+        : [{ titulo: '', opciones: [{ id: `opt_${Date.now()}`, titulo: '' }] }];
+    }
+    if (tipo === 'template') { nuevo.templateNombre = base.templateNombre; nuevo.templateParams = base.templateParams; }
+    if (tipo === 'media')     { nuevo.mediaType = base.mediaType ?? 'image'; nuevo.mediaUrl = base.mediaUrl; }
+    if (tipo === 'ticket')    { nuevo.ticketTipo = base.ticketTipo; nuevo.mensajeFinal = base.mensajeFinal; }
+    if (tipo === 'condicion') { nuevo.condicionCampo = base.condicionCampo; nuevo.condicionOperador = base.condicionOperador ?? 'eq'; nuevo.condicionValor = base.condicionValor; }
+    this.actualizarNodoDirecto(nodo, nuevo);
+  }
+
+  actualizarSmsDeNodo(nodo: CanvasNode, message: string): void {
+    this.actualizarNodoDirecto(nodo, { message } as SmsNodeConfig);
+  }
+
+  actualizarEmailDeNodo(nodo: CanvasNode, campo: 'subject' | 'body', valor: string): void {
+    this.actualizarNodoDirecto(nodo, { ...this.emailConfig(nodo), [campo]: valor } as EmailNodeConfig);
+  }
+
+  eliminarNodo(nodo: CanvasNode): void {
+    this.nodos.update(ns => ns.filter(n => n.id !== nodo.id));
+    this.aristas.update(as => as.filter(a => a.source !== nodo.id && a.target !== nodo.id));
+    if (this.nodoActivo()?.id === nodo.id) { this.nodoActivo.set(null); this.audiencia.set(null); }
+  }
+
+  // Clic en el cuerpo del nodo:
+  // — Segmento: selecciona/abre panel (NO detiene propagación)
+  // — Resto: detiene propagación (evita rebote con el canvas de foblex)
+  onFormClick(nodo: CanvasNode, event: MouseEvent): void {
+    if (nodo.type === 'segment') {
+      this.seleccionarNodo(nodo);
+    } else {
+      event.stopPropagation();
+    }
   }
 
   actualizarConfig(config: SegmentNodeConfig | SmsNodeConfig | EmailNodeConfig | WhatsappNodeConfig): void {
@@ -222,7 +436,7 @@ export class CampaignEditorComponent implements OnInit {
     const aristas = this.aristas();
 
     if (nodos.length === 0) {
-      return 'El canvas está vacío. Agrega al menos un Segmento y una acción (SMS o Email) conectados.';
+      return 'El canvas está vacío. Agrega al menos un Segmento y un nodo de acción conectados.';
     }
 
     const tieneSegmento = nodos.some(n => n.type === 'segment');
@@ -230,36 +444,50 @@ export class CampaignEditorComponent implements OnInit {
 
     if (!tieneSegmento || !tieneAccion) {
       this.nodosConError.set(new Set(nodos.map(n => n.id)));
-      return 'El canvas necesita al menos un nodo Segmento y una acción (SMS o Email) conectados para guardar.';
+      return 'El canvas necesita al menos un nodo Segmento y una acción conectados para guardar.';
     }
 
-    // Cada nodo de acción debe tener un Segmento como origen
-    const accionesDesconectadas = nodos
-      .filter(n => TIPOS_ACCION.includes(n.type))
-      .filter(accion => !aristas.some(a => {
+    // Nodos SMS/Email deben tener Segmento como origen (no aplica a WhatsApp que puede ir WP→WP)
+    const accionesNoWp = nodos.filter(n => n.type === 'sms' || n.type === 'email');
+    const accionesNoWpDesconectadas = accionesNoWp.filter(accion =>
+      !aristas.some(a => {
         if (a.target !== accion.id) return false;
+        return nodos.find(n => n.id === a.source)?.type === 'segment';
+      })
+    );
+
+    if (accionesNoWpDesconectadas.length > 0) {
+      this.nodosConError.set(new Set(accionesNoWpDesconectadas.map(n => n.id)));
+      const nombres = accionesNoWpDesconectadas.map(n => `"${this.etiquetaAccion(n)}"`).join(', ');
+      return `Nodo(s) sin Segmento conectado: ${nombres}.`;
+    }
+
+    // Nodos WhatsApp deben tener Segmento u otro WhatsApp como origen (excepto si es el primero del flujo)
+    const wpDesconectados = nodos
+      .filter(n => n.type === 'whatsapp')
+      .filter(wp => !aristas.some(a => {
+        if (a.target !== wp.id) return false;
         const origen = nodos.find(n => n.id === a.source);
-        return origen?.type === 'segment';
+        return origen?.type === 'segment' || origen?.type === 'whatsapp';
       }));
 
-    if (accionesDesconectadas.length > 0) {
-      this.nodosConError.set(new Set(accionesDesconectadas.map(n => n.id)));
-      const nombres = accionesDesconectadas.map(n => `"${this.etiquetaAccion(n)}"`).join(', ');
-      return `Nodo(s) de acción sin Segmento conectado: ${nombres}. Conecta un Segmento como origen antes de guardar.`;
+    if (wpDesconectados.length > 0) {
+      this.nodosConError.set(new Set(wpDesconectados.map(n => n.id)));
+      const nombres = wpDesconectados.map(n => `"${this.etiquetaAccion(n)}"`).join(', ');
+      return `Nodo(s) WhatsApp sin origen conectado: ${nombres}. Conecta desde un Segmento u otro nodo WhatsApp.`;
     }
 
-    // Cada Segmento debe tener al menos una acción como destino
+    // Segmentos deben tener al menos una acción como destino
     const segmentosDesconectados = nodos
       .filter(n => n.type === 'segment')
       .filter(seg => !aristas.some(a => {
         if (a.source !== seg.id) return false;
-        const destino = nodos.find(n => n.id === a.target);
-        return destino && TIPOS_ACCION.includes(destino.type);
+        return nodos.find(n => n.id === a.target) !== undefined;
       }));
 
     if (segmentosDesconectados.length > 0) {
       this.nodosConError.set(new Set(segmentosDesconectados.map(n => n.id)));
-      return 'Nodo(s) Segmento sin acción conectada como destino. Conecta un SMS o Email a cada Segmento.';
+      return 'Nodo(s) Segmento sin acción conectada como destino.';
     }
 
     this.nodosConError.set(new Set());
@@ -268,13 +496,36 @@ export class CampaignEditorComponent implements OnInit {
 
   private etiquetaAccion(nodo: CanvasNode): string {
     if (nodo.name) return nodo.name;
-    if (nodo.type === 'sms')      return this.truncar(this.smsConfig(nodo).message);
-    if (nodo.type === 'email')    return this.emailConfig(nodo).subject || 'Sin asunto';
+    if (nodo.type === 'sms')   return this.truncar(this.smsConfig(nodo).message);
+    if (nodo.type === 'email') return this.emailConfig(nodo).subject || 'Sin asunto';
     if (nodo.type === 'whatsapp') {
       const c = this.whatsappConfig(nodo);
-      return c.tipo === 'texto' ? this.truncar(c.mensaje) : c.templateNombre || 'Sin template';
+      if (c.tipo === 'texto')    return this.truncar(c.mensaje);
+      if (c.tipo === 'template') return c.templateNombre || 'Sin template';
+      if (c.tipo === 'botones')  return `Botones (${c.botones?.length ?? 0})`;
+      if (c.tipo === 'lista')    return 'Lista de opciones';
+      if (c.tipo === 'media')     return c.mediaType === 'video' ? 'Video' : c.mediaType === 'document' ? 'Documento' : 'Imagen';
+      if (c.tipo === 'ticket')   return c.ticketTipo === 'venta' ? 'Ticket de venta' : 'Ticket de soporte';
+      if (c.tipo === 'condicion') return `Si ${c.condicionCampo ?? '?'} ${c.condicionOperador ?? 'eq'} ${c.condicionValor ?? '?'}`;
     }
     return nodo.id;
+  }
+
+  async activarCampana(): Promise<void> {
+    const camp = this.campania();
+    if (!camp) return;
+    this.activando.set(true);
+    this.error.set(null);
+    try {
+      await this.campañaRepo.activar(camp.id);
+      this.campania.set({ ...camp, status: 'ACTIVE' });
+      this.exito.set('Campaña activada — mensajes enviados a la audiencia');
+      setTimeout(() => this.exito.set(null), 5000);
+    } catch {
+      this.error.set('Error al activar la campaña. Verifica que el canvas esté guardado.');
+    } finally {
+      this.activando.set(false);
+    }
   }
 
   async guardar(): Promise<void> {
@@ -346,7 +597,13 @@ export class CampaignEditorComponent implements OnInit {
     }
     if (nodo.type === 'whatsapp') {
       const c = this.whatsappConfig(nodo);
-      return c.tipo === 'texto' ? !c.mensaje?.trim() : !c.templateNombre?.trim();
+      if (c.tipo === 'texto')    return !c.mensaje?.trim();
+      if (c.tipo === 'template') return !c.templateNombre?.trim();
+      if (c.tipo === 'botones')  return !(c.botones?.length) || c.botones.some(b => !b.texto.trim());
+      if (c.tipo === 'lista')    return !(c.secciones?.length) || !c.bodyTexto?.trim();
+      if (c.tipo === 'media')     return !c.mediaUrl?.trim();
+      if (c.tipo === 'ticket')   return !c.ticketTipo;
+      if (c.tipo === 'condicion') return !c.condicionCampo?.trim() || !c.condicionValor?.trim();
     }
     if (nodo.type === 'segment') return !(this.segmentConfig(nodo).filters?.conditions?.length);
     return false;
@@ -362,7 +619,13 @@ export class CampaignEditorComponent implements OnInit {
     }
     if (nodo.type === 'whatsapp') {
       const c = this.whatsappConfig(nodo);
-      return c.tipo === 'texto' ? 'Mensaje vacío' : 'Nombre de template vacío';
+      if (c.tipo === 'texto')    return 'Mensaje vacío';
+      if (c.tipo === 'template') return 'Nombre de template vacío';
+      if (c.tipo === 'botones')  return 'Botones incompletos';
+      if (c.tipo === 'lista')    return 'Lista incompleta';
+      if (c.tipo === 'media')     return 'URL de media vacía';
+      if (c.tipo === 'ticket')   return 'Tipo de ticket no definido';
+      if (c.tipo === 'condicion') return 'Condición sin configurar';
     }
     if (nodo.type === 'segment') return 'Sin filtros configurados';
     return '';
@@ -382,8 +645,10 @@ export class CampaignEditorComponent implements OnInit {
     return id;
   }
 
-  eliminarArista(source: string, target: string): void {
-    this.aristas.update(as => as.filter(a => !(a.source === source && a.target === target)));
+  eliminarArista(source: string, target: string, condicion?: string): void {
+    this.aristas.update(as => as.filter(a =>
+      !(a.source === source && a.target === target && a.condicion === condicion)
+    ));
   }
 
   eliminarNodoActivo(): void {
@@ -399,17 +664,15 @@ export class CampaignEditorComponent implements OnInit {
   }
 
   eliminarConexionesSeleccionadas(): void {
-    const ids = [...this.conexionesSeleccionadas()]; // copia antes de limpiar
+    const ids = [...this.conexionesSeleccionadas()];
     this.conexionesSeleccionadas.set([]);
     if (!ids.length) return;
-    console.log('[canvas] eliminar conexiones, ids:', ids);
-    // El connectionId de foblex incluye sourceId+targetId concatenados
     this.aristas.update(as => as.filter(a => {
-      const source = a.source + '_out';
-      const target = a.target + '_in';
-      const match = ids.some(id => id.includes(source) && id.includes(target));
-      if (match) console.log('[canvas] eliminando arista:', a);
-      return !match;
+      const source = a.condicion
+        ? `${a.source}__${a.condicion}__out`
+        : `${a.source}_out`;
+      const target = `${a.target}_in`;
+      return !ids.some(id => id.includes(source) && id.includes(target));
     }));
   }
 
@@ -537,13 +800,135 @@ export class CampaignEditorComponent implements OnInit {
   }
 
   whatsappConfig(nodo: CanvasNode): WhatsappNodeConfig {
-    return (nodo.config ?? { tipo: 'texto', mensaje: '', templateNombre: '', templateParams: [] }) as WhatsappNodeConfig;
+    return (nodo.config ?? { tipo: 'texto', mensaje: '' }) as WhatsappNodeConfig;
   }
 
   actualizarTipoWp(tipo: WhatsappTipo): void {
     const activo = this.nodoActivo();
     if (!activo || activo.type !== 'whatsapp') return;
-    this.actualizarConfig({ ...this.whatsappConfig(activo), tipo } as WhatsappNodeConfig);
+    const base = this.whatsappConfig(activo);
+
+    // Limpiar edges condicionales si se abandona botones/lista
+    if ((base.tipo === 'botones' || base.tipo === 'lista') && tipo !== base.tipo) {
+      this.aristas.update(as => as.filter(a => !(a.source === activo.id && a.condicion)));
+    }
+
+    const nuevo: WhatsappNodeConfig = { tipo, mensaje: base.mensaje };
+    if (tipo === 'botones') {
+      nuevo.botones = base.botones?.length
+        ? base.botones
+        : [{ id: 'btn_1', texto: '' }, { id: 'btn_2', texto: '' }];
+    }
+    if (tipo === 'lista') {
+      nuevo.secciones = base.secciones?.length
+        ? base.secciones
+        : [{ titulo: '', opciones: [{ id: `opt_${Date.now()}`, titulo: '' }] }];
+    }
+    if (tipo === 'template') {
+      nuevo.templateNombre  = base.templateNombre;
+      nuevo.templateParams  = base.templateParams;
+    }
+    if (tipo === 'media') nuevo.mediaType = base.mediaType ?? 'image';
+    if (tipo === 'ticket') nuevo.ticketTipo = base.ticketTipo;
+    this.actualizarConfig(nuevo);
+  }
+
+  // --- Botones ---
+  agregarBoton(): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const botones = [...(c.botones ?? [])];
+    if (botones.length >= 3) return;
+    botones.push({ id: `btn_${botones.length + 1}`, texto: '' });
+    this.actualizarConfigWp({ botones });
+  }
+
+  eliminarBoton(idx: number): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const eliminado = c.botones?.[idx];
+    const botones = (c.botones ?? []).filter((_, i) => i !== idx);
+    this.actualizarConfigWp({ botones });
+    // Quitar arista condicional del botón eliminado
+    if (eliminado) {
+      this.aristas.update(as => as.filter(a => !(a.source === activo.id && a.condicion === eliminado.id)));
+    }
+  }
+
+  actualizarTextoBoton(idx: number, texto: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const botones = (c.botones ?? []).map((b, i) => i === idx ? { ...b, texto } : b);
+    this.actualizarConfigWp({ botones });
+  }
+
+  // --- Lista ---
+  agregarSeccion(): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const secciones = [...(c.secciones ?? []), { titulo: '', opciones: [{ id: `opt_${Date.now()}`, titulo: '' }] }];
+    this.actualizarConfigWp({ secciones });
+  }
+
+  agregarOpcion(secIdx: number): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const secciones: WhatsappSeccion[] = (c.secciones ?? []).map((s, i) =>
+      i === secIdx
+        ? { ...s, opciones: [...s.opciones, { id: `opt_${Date.now()}`, titulo: '' }] }
+        : s
+    );
+    this.actualizarConfigWp({ secciones });
+  }
+
+  eliminarOpcion(secIdx: number, optIdx: number): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const eliminada = c.secciones?.[secIdx]?.opciones?.[optIdx];
+    const secciones: WhatsappSeccion[] = (c.secciones ?? []).map((s, i) =>
+      i === secIdx ? { ...s, opciones: s.opciones.filter((_, j) => j !== optIdx) } : s
+    );
+    this.actualizarConfigWp({ secciones });
+    // Quitar arista condicional de la opción eliminada
+    if (eliminada) {
+      this.aristas.update(as => as.filter(a => !(a.source === activo.id && a.condicion === eliminada.id)));
+    }
+  }
+
+  actualizarTituloSeccion(secIdx: number, titulo: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const secciones: WhatsappSeccion[] = (c.secciones ?? []).map((s, i) => i === secIdx ? { ...s, titulo } : s);
+    this.actualizarConfigWp({ secciones });
+  }
+
+  actualizarTituloOpcion(secIdx: number, optIdx: number, titulo: string): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    const c = this.whatsappConfig(activo);
+    const secciones: WhatsappSeccion[] = (c.secciones ?? []).map((s, i) =>
+      i === secIdx
+        ? { ...s, opciones: s.opciones.map((o, j) => j === optIdx ? { ...o, titulo } : o) }
+        : s
+    );
+    this.actualizarConfigWp({ secciones });
+  }
+
+  private actualizarConfigWp(parcial: Partial<WhatsappNodeConfig>): void {
+    const activo = this.nodoActivo();
+    if (!activo || activo.type !== 'whatsapp') return;
+    this.actualizarConfig({ ...this.whatsappConfig(activo), ...parcial } as WhatsappNodeConfig);
+  }
+
+  actualizarConfigWpDirecto(campo: keyof WhatsappNodeConfig, valor: unknown): void {
+    this.actualizarConfigWp({ [campo]: valor } as Partial<WhatsappNodeConfig>);
   }
 
   actualizarMensajeWp(mensaje: string): void {

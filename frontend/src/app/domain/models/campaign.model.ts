@@ -14,6 +14,7 @@ export interface Campaign {
   description?: string;
   status: CampaignStatus;
   locale: string;
+  owner_id: string;
   created_at: string;
   canvas?: Canvas;
 }
@@ -63,18 +64,57 @@ export interface EmailNodeConfig {
   body: string;
 }
 
-export type WhatsappTipo = 'texto' | 'template';
+export type WhatsappTipo = 'texto' | 'template' | 'botones' | 'lista' | 'media' | 'ticket' | 'condicion';
+
+export interface WhatsappBoton {
+  id: string;
+  texto: string;
+}
+
+export interface WhatsappOpcion {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+}
+
+export interface WhatsappSeccion {
+  titulo: string;
+  opciones: WhatsappOpcion[];
+}
 
 export interface WhatsappNodeConfig {
   tipo: WhatsappTipo;
-  mensaje: string;
-  templateNombre: string;
-  templateParams: string[];
+  // texto / template / media
+  mensaje?: string;
+  templateNombre?: string;
+  templateParams?: string[];
+  // botones (hasta 3 — cada uno es un puerto de salida en el canvas)
+  botones?: WhatsappBoton[];
+  // lista (cada opción es un puerto de salida)
+  headerTexto?: string;
+  bodyTexto?: string;
+  footerTexto?: string;
+  botonLista?: string;
+  secciones?: WhatsappSeccion[];
+  // media
+  mediaUrl?: string;
+  mediaCaption?: string;
+  mediaType?: 'image' | 'video' | 'document';
+  // ticket (nodo terminal — sin salida)
+  ticketTipo?: 'venta' | 'soporte';
+  mensajeFinal?: string;
+  // condicion (bifurcación sí/no)
+  condicionCampo?: string;
+  condicionOperador?: 'eq' | 'ne' | 'contains' | 'gt' | 'lt';
+  condicionValor?: string;
 }
 
 export interface CanvasEdge {
   source: string;
   target: string;
+  condicion?: string;
+  etiqueta?: string;
+  auto?: boolean;  // true = generada desde config WP, no dibujada manualmente
 }
 
 export interface CreateCampaignPayload {
@@ -82,4 +122,5 @@ export interface CreateCampaignPayload {
   description?: string;
   status?: CampaignStatus;
   locale?: string;
+  owner_id?: string;
 }

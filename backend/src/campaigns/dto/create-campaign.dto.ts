@@ -27,4 +27,9 @@ export class CreateCampaignDto {
   @IsString()
   @MaxLength(10)
   locale?: string;
+
+  @ApiPropertyOptional({ example: '1107b43e-997a-42f9-9101-9e238d4ccef8', description: 'UUID del tenant propietario' })
+  @IsOptional()
+  @IsString()
+  owner_id?: string;
 }
