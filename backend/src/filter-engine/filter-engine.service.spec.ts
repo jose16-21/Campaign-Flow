@@ -165,6 +165,45 @@ describe('FilterEngineService + MysqlAudienceResolver', () => {
     });
   });
 
+  describe('construirWhere — is_empty / is_not_empty', () => {
+    it('is_empty genera IS NULL OR vacío sin parámetros', () => {
+      const { sql, params } = service.construirWhere({
+        field: 'phone', operator: 'is_empty', value: null,
+      });
+      expect(sql).toBe('(c.phone IS NULL OR c.phone = \'\')');
+      expect(params).toEqual([]);
+    });
+
+    it('is_not_empty genera IS NOT NULL AND no vacío sin parámetros', () => {
+      const { sql, params } = service.construirWhere({
+        field: 'email', operator: 'is_not_empty', value: null,
+      });
+      expect(sql).toBe('(c.email IS NOT NULL AND c.email != \'\')');
+      expect(params).toEqual([]);
+    });
+
+    it('is_empty sobre atributo dinámico genera JSON_EXTRACT correcto', () => {
+      const { sql, params } = service.construirWhere({
+        field: 'attributes.plan', operator: 'is_empty', value: null,
+      });
+      expect(sql).toContain('JSON_UNQUOTE(JSON_EXTRACT(c.attributes');
+      expect(sql).toContain('IS NULL');
+      expect(params).toEqual([]);
+    });
+
+    it('is_not_empty en grupo AND combina correctamente', () => {
+      const { sql, params } = service.construirWhere({
+        op: 'AND',
+        conditions: [
+          { field: 'email', operator: 'is_not_empty', value: null },
+          { field: 'phone', operator: 'is_empty', value: null },
+        ],
+      });
+      expect(sql).toContain('AND');
+      expect(params).toEqual([]);
+    });
+  });
+
   describe('seguridad — sin concatenación de valores', () => {
     it('el SQL nunca contiene el valor directamente', () => {
       const inyeccion = "'; DROP TABLE contacts; --";

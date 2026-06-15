@@ -96,7 +96,8 @@
     font-weight: 700;
     flex-shrink: 0;
 
-    &--sms { background: #e57c00; }
+    &--sms   { background: #e57c00; }
+    &--email { background: #1565c0; }
   }
 }
 
@@ -125,7 +126,8 @@
   &:active { cursor: grabbing; }
 
   &--segment { border-color: #1a1a2e; }
-  &--sms { border-color: #e57c00; }
+  &--sms     { border-color: #e57c00; }
+  &--email   { border-color: #1565c0; }
   &--error {
     border-color: #c62828;
     box-shadow: 0 0 0 2px rgba(198, 40, 40, .25);
@@ -160,7 +162,8 @@
     font-size: 10px;
     font-weight: 700;
 
-    .nodo--sms & { background: #e57c00; }
+    .nodo--sms   & { background: #e57c00; }
+    .nodo--email & { background: #1565c0; }
   }
 
   &__type { font-size: 12px; font-weight: 600; flex: 1; }
@@ -179,6 +182,7 @@
     min-height: 24px;
 
     &--sms        { font-style: italic; }
+    &--email      { font-style: italic; color: #1565c0; }
     &--advertencia { color: #e57c00; font-style: italic; }
   }
 
@@ -256,6 +260,28 @@
   text-transform: uppercase;
   color: #999;
   font-weight: 600;
+}
+
+.email-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  &:focus { outline: none; border-color: #1565c0; }
+}
+
+.email-textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  &:focus { outline: none; border-color: #1565c0; }
 }
 
 .sms-textarea {

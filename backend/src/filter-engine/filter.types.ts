@@ -6,7 +6,9 @@ export type Operator =
   | 'lt'
   | 'lte'
   | 'in'
-  | 'contains';
+  | 'contains'
+  | 'is_empty'
+  | 'is_not_empty';
 
 export interface Condition {
   field: string;

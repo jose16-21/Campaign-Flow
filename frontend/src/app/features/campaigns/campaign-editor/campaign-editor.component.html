@@ -31,7 +31,9 @@
       <p class="palette__title">Componentes</p>
       @for (item of paleta; track item.type) {
         <div class="palette__item" fExternalItem [fData]="item">
-          <span class="palette__icon" [class.palette__icon--sms]="item.type === 'sms'">
+          <span class="palette__icon"
+            [class.palette__icon--sms]="item.type === 'sms'"
+            [class.palette__icon--email]="item.type === 'email'">
             {{ item.icon }}
           </span>
           <span>{{ item.label }}</span>
@@ -57,6 +59,7 @@
               class="nodo"
               [class.nodo--segment]="nodo.type === 'segment'"
               [class.nodo--sms]="nodo.type === 'sms'"
+              [class.nodo--email]="nodo.type === 'email'"
               [class.nodo--activo]="nodoActivo()?.id === nodo.id"
               [class.nodo--error]="nodosConError().has(nodo.id)"
               fNode
@@ -67,8 +70,12 @@
 
               <div class="nodo__drag-area" fDragHandle>
                 <div class="nodo__header">
-                  <span class="nodo__icon">{{ nodo.type === 'segment' ? 'S' : 'M' }}</span>
-                  <span class="nodo__type">{{ nodo.name || (nodo.type === 'segment' ? 'Segmento' : 'SMS') }}</span>
+                  <span class="nodo__icon"
+                    [class.nodo__icon--sms]="nodo.type === 'sms'"
+                    [class.nodo__icon--email]="nodo.type === 'email'">
+                    {{ nodo.type === 'segment' ? 'S' : nodo.type === 'sms' ? 'M' : 'E' }}
+                  </span>
+                  <span class="nodo__type">{{ nodo.name || (nodo.type === 'segment' ? 'Segmento' : nodo.type === 'sms' ? 'SMS' : 'Email') }}</span>
                   @if (tieneAdvertencia(nodo)) {
                     <span class="nodo__advertencia" [title]="textoAdvertencia(nodo)">⚠</span>
                   }
@@ -76,6 +83,7 @@
 
                 <div class="nodo__body"
                      [class.nodo__body--sms]="nodo.type === 'sms'"
+                     [class.nodo__body--email]="nodo.type === 'email'"
                      [class.nodo__body--advertencia]="tieneAdvertencia(nodo)">
                   @if (nodo.type === 'segment') {
                     @if ((segmentConfig(nodo).filters?.conditions?.length ?? 0) === 0) {
@@ -83,11 +91,17 @@
                     } @else {
                       {{ segmentConfig(nodo).filters?.conditions?.length }} filtro(s)
                     }
-                  } @else {
+                  } @else if (nodo.type === 'sms') {
                     @if (!smsConfig(nodo).message.trim().length) {
                       <span class="nodo__aviso">Mensaje vacío</span>
                     } @else {
                       {{ truncar(smsConfig(nodo).message) }}
+                    }
+                  } @else if (nodo.type === 'email') {
+                    @if (!emailConfig(nodo).subject.trim().length) {
+                      <span class="nodo__aviso">Sin asunto</span>
+                    } @else {
+                      {{ truncar(emailConfig(nodo).subject) }}
                     }
                   }
                 </div>
@@ -136,7 +150,7 @@
       <aside class="config-panel" #configPanel>
         <div class="config-panel__resizer" (mousedown)="iniciarResize($event, configPanel)"></div>
         <div class="config-panel__header">
-          <h3>{{ nodo.type === 'segment' ? 'Segmento' : 'SMS' }}</h3>
+          <h3>{{ nodo.type === 'segment' ? 'Segmento' : nodo.type === 'sms' ? 'SMS' : 'Email' }}</h3>
           <button class="btn-delete" title="Eliminar nodo" (click)="eliminarNodoActivo()">🗑</button>
           <button class="btn-close" (click)="nodoActivo.set(null)">✕</button>
         </div>
@@ -182,7 +196,6 @@
           @if (nodo.type === 'sms') {
             <p class="config-label">Mensaje</p>
 
-            <!-- Variables disponibles -->
             <div class="variables-chips">
               @for (v of variablesDisponibles; track v.token) {
                 <button class="chip" (click)="insertarVariable(v.token)" [title]="v.etiqueta">
@@ -203,11 +216,49 @@
               {{ contadorSms }}
             </p>
 
-            <!-- Preview con variables resueltas -->
             @if (smsConfig(nodo).message.includes('{{')) {
               <div class="sms-preview">
                 <p class="config-label">Preview</p>
                 <p class="sms-preview__texto">{{ previewMensaje(smsConfig(nodo).message) }}</p>
+              </div>
+            }
+          }
+
+          @if (nodo.type === 'email') {
+            <p class="config-label">Asunto</p>
+            <div class="variables-chips">
+              @for (v of variablesDisponibles; track v.token) {
+                <button class="chip" (click)="actualizarAsunto(emailConfig(nodo).subject + v.token)" [title]="v.etiqueta">
+                  {{ v.token }}
+                </button>
+              }
+            </div>
+            <input
+              type="text"
+              class="email-input"
+              [value]="emailConfig(nodo).subject"
+              (input)="actualizarAsunto($any($event.target).value)"
+              placeholder="Ej. Hola {{'{{'}}name{{'}}'}}, revisa tu plan" />
+
+            <p class="config-label">Cuerpo</p>
+            <div class="variables-chips">
+              @for (v of variablesDisponibles; track v.token) {
+                <button class="chip" (click)="actualizarCuerpo(emailConfig(nodo).body + v.token)" [title]="v.etiqueta">
+                  {{ v.token }}
+                </button>
+              }
+            </div>
+            <textarea
+              class="email-textarea"
+              [value]="emailConfig(nodo).body"
+              (input)="actualizarCuerpo($any($event.target).value)"
+              placeholder="Estimado/a {{'{{'}}name{{'}}'}}, te escribimos para...">
+            </textarea>
+
+            @if (emailConfig(nodo).subject.includes('{{') || emailConfig(nodo).body.includes('{{')) {
+              <div class="sms-preview">
+                <p class="config-label">Preview asunto</p>
+                <p class="sms-preview__texto">{{ previewMensaje(emailConfig(nodo).subject) }}</p>
               </div>
             }
           }
