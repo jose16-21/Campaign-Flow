@@ -124,7 +124,6 @@
 
 // ────────────────────────────────────────────────────────
 // NODO — card con formulario inline
-// Cada tipo WP tiene su propia identidad visual
 // ────────────────────────────────────────────────────────
 .nodo {
   background: #fff;
@@ -143,7 +142,7 @@
   &--sms      { border-color: #e57c00; }
   &--email    { border-color: #1565c0; }
 
-  // ── WhatsApp tipos — cada uno es su propio color ──
+  // ── WhatsApp tipos ──
   &--wp-texto    { border-color: #25d366; }
   &--wp-botones  { border-color: #075e54; min-width: 260px; }
   &--wp-lista    { border-color: #3b82f6; min-width: 260px; }
@@ -212,8 +211,6 @@
   }
 
   // ── Formulario inline ──
-  // Los !important son necesarios para anular user-select:none que foblex
-  // aplica globalmente al elemento [fNode] para evitar selección accidental durante el drag.
   &__form {
     padding: 9px 10px;
     display: flex; flex-direction: column; gap: 6px;
@@ -332,8 +329,6 @@
     text-transform: none; letter-spacing: 0;
   }
 
-  // Grid de dos columnas: [contenido de rama] [puerto de salida]
-  // Cada iteración @for produce un par de celdas en la misma fila
   &__branches-grid {
     display: grid;
     grid-template-columns: 1fr 20px;
@@ -422,7 +417,7 @@
 }
 
 // ────────────────────────────────────────────────────────
-// Panel derecho (solo filtros de segmento)
+// Panel de conexiones (sidebar cuando no hay nodo activo)
 // ────────────────────────────────────────────────────────
 .config-panel {
   width: 360px; min-width: 280px; max-width: 600px;
@@ -447,66 +442,6 @@
   }
 
   &--conexiones { width: 240px; min-width: 200px; }
-}
-
-.config-panel__icono { font-size: 16px; margin-right: 4px; line-height: 1; }
-
-.config-label {
-  font-size: 11px; text-transform: uppercase; color: #999; font-weight: 600; margin: 0;
-}
-
-.config-hint {
-  font-size: 10px; color: #bbb; font-style: italic; margin: 0;
-}
-
-.config-hint-inline {
-  font-weight: 400; color: #bbb; font-size: 10px; text-transform: none;
-}
-
-.variables-chips {
-  display: flex; flex-wrap: wrap; gap: 4px;
-}
-
-.chip {
-  padding: 2px 8px; border: 1px solid #e57c00; border-radius: 12px;
-  background: #fff8f0; color: #e57c00; font-size: 11px; font-family: monospace;
-  cursor: pointer; white-space: nowrap;
-  &:hover { background: #ffe0b2; }
-  &--wp { border-color: #25d366; background: #f0fdf4; color: #1a8a47; &:hover { background: #dcfce7; } }
-}
-
-.sms-preview {
-  background: #f8f8ff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px 10px;
-  &__texto { font-size: 12px; color: #444; line-height: 1.5; white-space: pre-wrap; }
-}
-
-.panel-textarea {
-  width: 100%; min-height: 80px; padding: 7px 10px;
-  border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit;
-  resize: vertical;
-  &:focus { outline: none; border-color: #7c3aed; }
-}
-
-.panel-info {
-  background: #f8f8ff; border: 1px solid #e8e8ff; border-radius: 8px; padding: 10px 12px;
-  font-size: 12px; color: #444; line-height: 1.7;
-  p { margin: 0; }
-}
-
-.nombre-nodo {
-  display: flex; flex-direction: column; gap: 5px;
-  &__input {
-    padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px;
-    font-size: 13px; font-family: inherit;
-    &:focus { outline: none; border-color: #1a1a2e; }
-  }
-}
-
-.audiencia {
-  background: #f8f8ff; border-radius: 6px; padding: 10px;
-  &__total { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
-  &__item { font-size: 12px; padding: 4px 0; border-bottom: 1px solid #eee; display: flex; flex-direction: column; gap: 2px; }
-  &__email { color: #999; font-size: 11px; }
 }
 
 .conexion-item {
@@ -545,11 +480,6 @@
   background: none; border: none; cursor: pointer; color: #999;
   font-size: 14px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0;
   &:hover { color: #1a1a2e; background: #f0f0f0; }
-}
-
-.btn-close {
-  background: none; border: none; cursor: pointer; color: #999; font-size: 16px;
-  &:hover { color: #333; }
 }
 
 .btn-delete {
@@ -692,8 +622,6 @@
 
 // ────────────────────────────────────────────────────────
 // Etiquetas sobre las líneas de conexión
-// foblex proyecta el contenido de <f-connection> en el punto
-// central de cada línea, por eso .arista-label flota ahí.
 // ────────────────────────────────────────────────────────
 .arista-label {
   background: #fff;
@@ -711,11 +639,9 @@
 }
 
 // ────────────────────────────────────────────────────────
-// Estilos globales de las líneas foblex (necesita ::ng-deep
-// porque el SVG lo renderiza foblex fuera del shadow del componente)
+// Estilos globales de las líneas foblex
 // ────────────────────────────────────────────────────────
 ::ng-deep {
-  // Línea base — más gruesa y con color neutro oscuro
   .f-connection path,
   .f-connection line,
   .f-connection polyline {
@@ -723,7 +649,6 @@
     stroke-width: 1.8px !important;
   }
 
-  // La línea mientras se está dibujando (drag en curso)
   .f-connection-for-create path,
   .f-connection-for-create line {
     stroke: #4a90e2 !important;
@@ -805,58 +730,4 @@
   font-size: 11px; color: #444;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   flex: 1; padding: 1px 0;
-}
-
-// ────────────────────────────────────────────────────────
-// Panel — elementos nuevos
-// ────────────────────────────────────────────────────────
-.panel-counter {
-  font-size: 11px; color: #888; text-align: right; margin: 2px 0 6px;
-  &--over { color: #c62828; font-weight: 600; }
-}
-
-.panel-tipo-wp {
-  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;
-}
-.panel-tipo-btn {
-  padding: 5px 10px; border-radius: 6px; border: 1px solid #ddd;
-  background: #f8f8f8; font-size: 12px; cursor: pointer; transition: all .15s;
-  &:hover { border-color: #1a8a47; background: #f0fdf4; }
-  &--activo { background: #1a8a47; color: #fff; border-color: #1a8a47; font-weight: 600; }
-}
-
-.panel-branch-row {
-  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
-  input { flex: 1; }
-}
-
-.panel-media-tipos {
-  display: flex; gap: 8px; margin-bottom: 10px;
-}
-.panel-media-btn {
-  flex: 1; padding: 6px 4px; border-radius: 6px; border: 1px solid #ddd;
-  background: #f8f8f8; font-size: 12px; cursor: pointer; text-align: center;
-  &:hover { border-color: #b45309; }
-  &--activo { background: #fffbeb; border-color: #b45309; color: #b45309; font-weight: 600; }
-}
-
-.panel-ticket-tipos {
-  display: flex; gap: 8px; margin-bottom: 10px;
-}
-.panel-ticket-btn {
-  flex: 1; padding: 8px 6px; border-radius: 6px; border: 1px solid #ddd;
-  background: #f8f8f8; font-size: 13px; cursor: pointer; text-align: center;
-  &:hover { border-color: #b91c1c; }
-  &--activo { background: #fff1f2; border-color: #b91c1c; color: #b91c1c; font-weight: 600; }
-}
-
-.btn--sm { padding: 4px 10px; font-size: 12px; }
-.btn-delete--sm {
-  background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; padding: 0 4px;
-  &:hover { color: #c62828; }
-}
-
-.panel-branch-select {
-  font-size: 12px; margin-bottom: 8px; color: #1a8a47;
-  option[value=""] { color: #aaa; }
 }

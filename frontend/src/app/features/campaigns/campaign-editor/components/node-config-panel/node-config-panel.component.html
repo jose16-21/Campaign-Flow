@@ -1,0 +1,275 @@
+@if (nodoActivo(); as nodo) {
+  <aside class="config-panel" #configPanel>
+    <div class="config-panel__resizer" (mousedown)="iniciarResize($event, configPanel)"></div>
+    <div class="config-panel__header">
+      <span class="config-panel__icono">
+        @if (nodo.type === 'whatsapp') { {{ wpTipoMeta[whatsappConfig(nodo).tipo]?.icon }} }
+        @else { {{ iconoNodo[nodo.type] }} }
+      </span>
+      <h3>
+        @if (nodo.name) { {{ nodo.name }} }
+        @else if (nodo.type === 'whatsapp') { {{ wpTipoMeta[whatsappConfig(nodo).tipo]?.label }} }
+        @else { {{ labelNodo[nodo.type] }} }
+      </h3>
+      <button class="btn-delete" title="Eliminar nodo" (click)="eliminarNodo(nodo)">🗑</button>
+      <button class="btn-close" (click)="state.nodoActivo.set(null)">✕</button>
+    </div>
+
+    <div class="config-panel__body">
+      <!-- Nombre personalizado del nodo (etiqueta en el canvas) -->
+      <div class="nombre-nodo">
+        <p class="config-label">Etiqueta del nodo</p>
+        <input type="text" class="nombre-nodo__input"
+          [placeholder]="nodo.type === 'segment' ? 'Ej. Clientes GT premium' : 'Ej. Bienvenida al flujo'"
+          [defaultValue]="nodo.name ?? ''"
+          (input)="actualizarNombre($any($event.target).value)" />
+        <p class="config-hint">Reemplaza la etiqueta en el canvas</p>
+      </div>
+
+      <!-- ─── SEGMENTO ─── -->
+      @if (nodo.type === 'segment') {
+        <p class="config-label">Filtros de audiencia</p>
+        <app-filter-builder
+          [grupo]="segmentConfig(nodo).filters ?? { op: 'AND', conditions: [] }"
+          (grupoChange)="actualizarFiltros($event)" />
+        <button class="btn btn--secondary btn--full" [disabled]="cargandoAudiencia()" (click)="previewAudiencia()">
+          {{ cargandoAudiencia() ? 'Calculando...' : 'Preview audiencia' }}
+        </button>
+        @if (audiencia(); as a) {
+          <div class="audiencia">
+            <p class="audiencia__total">{{ a.total }} contacto(s)</p>
+            @for (c of a.contactos.slice(0, 5); track c.id) {
+              <div class="audiencia__item">{{ c.first_name }} {{ c.last_name }}
+                <span class="audiencia__email">{{ c.email }}</span>
+              </div>
+            }
+          </div>
+        }
+      }
+
+      <!-- ─── SMS ─── -->
+      @if (nodo.type === 'sms') {
+        <p class="config-label">Mensaje</p>
+        <textarea class="panel-textarea sms-textarea" rows="5"
+          [defaultValue]="smsConfig(nodo).message"
+          (change)="actualizarSmsDeNodo(nodo, $any($event.target).value)"
+          placeholder="Hola {{'{{'}}name{{'}}'}}, escribe tu mensaje SMS aquí...">
+        </textarea>
+        <p class="panel-counter" [class.panel-counter--over]="superaLimiteSms">{{ contadorSms }}</p>
+        <p class="config-label">Variables</p>
+        <div class="variables-chips">
+          @for (v of variablesDisponibles; track v.token) {
+            <button class="chip" (click)="insertarVariable(v.token)" [title]="v.etiqueta">{{ v.token }}</button>
+          }
+        </div>
+        @if (smsConfig(nodo).message.includes('{{')) {
+          <div class="sms-preview">
+            <p class="config-label">Preview</p>
+            <p class="sms-preview__texto">{{ previewMensaje(smsConfig(nodo).message) }}</p>
+          </div>
+        }
+      }
+
+      <!-- ─── EMAIL ─── -->
+      @if (nodo.type === 'email') {
+        <p class="config-label">Asunto</p>
+        <input type="text" class="nombre-nodo__input"
+          [defaultValue]="emailConfig(nodo).subject"
+          (change)="actualizarEmailDeNodo(nodo, 'subject', $any($event.target).value)"
+          placeholder="Asunto del email..." />
+        <p class="config-label">Cuerpo</p>
+        <textarea class="panel-textarea" rows="8"
+          [defaultValue]="emailConfig(nodo).body"
+          (change)="actualizarEmailDeNodo(nodo, 'body', $any($event.target).value)"
+          placeholder="Escribe el cuerpo del email...">
+        </textarea>
+        <p class="config-label">Variables</p>
+        <div class="variables-chips">
+          @for (v of variablesDisponibles; track v.token) {
+            <button class="chip" (click)="actualizarEmailDeNodo(nodo, 'body', emailConfig(nodo).body + v.token)" [title]="v.etiqueta">{{ v.token }}</button>
+          }
+        </div>
+      }
+
+      <!-- ─── WHATSAPP ─── -->
+      @if (nodo.type === 'whatsapp') {
+        <!-- Selector de tipo -->
+        <p class="config-label">Tipo de mensaje</p>
+        <div class="panel-tipo-wp">
+          @for (t of wpTiposList; track t.value) {
+            <button class="panel-tipo-btn"
+              [class.panel-tipo-btn--activo]="whatsappConfig(nodo).tipo === t.value"
+              (click)="actualizarTipoWpDeNodo(nodo, t.value)">
+              {{ t.icon }} {{ t.label }}
+            </button>
+          }
+        </div>
+
+        <!-- Texto / Botones -->
+        @if (whatsappConfig(nodo).tipo === 'texto' || whatsappConfig(nodo).tipo === 'botones') {
+          <p class="config-label">Mensaje</p>
+          <textarea class="panel-textarea" rows="4"
+            [defaultValue]="whatsappConfig(nodo).mensaje ?? ''"
+            (change)="actualizarCampoWp(nodo, 'mensaje', $any($event.target).value)"
+            placeholder="Hola {{'{{'}}name{{'}}'}}, escribe tu mensaje...">
+          </textarea>
+          <div class="variables-chips">
+            @for (v of variablesDisponibles; track v.token) {
+              <button class="chip chip--wp"
+                (click)="actualizarCampoWp(nodo, 'mensaje', (whatsappConfig(nodo).mensaje ?? '') + v.token)"
+                [title]="v.etiqueta">{{ v.token }}</button>
+            }
+          </div>
+        }
+
+        <!-- Botones: editar textos + agregar/eliminar -->
+        @if (whatsappConfig(nodo).tipo === 'botones') {
+          <p class="config-label">Botones <span class="config-hint-inline">(máx. 3)</span></p>
+          @for (btn of whatsappConfig(nodo).botones ?? []; track btn.id; let i = $index) {
+            <div class="panel-branch-row">
+              <input type="text" class="nombre-nodo__input"
+                [defaultValue]="btn.texto"
+                (change)="actualizarTextoBotonDeNodo(nodo, i, $any($event.target).value)"
+                [placeholder]="'Botón ' + (i + 1) + '...'" />
+              <button class="btn-delete btn-delete--sm" title="Eliminar" (click)="eliminarBotonDeNodo(nodo, i)">×</button>
+            </div>
+            <select class="nombre-nodo__input panel-branch-select"
+              (change)="asignarDestinoBranch(nodo, btn.id, $any($event.target).value)">
+              <option value="" [selected]="targetDeRama(nodo, btn.id) === ''">— sin conexión</option>
+              @for (n of nodosDisponibles(nodo.id); track n.id) {
+                <option [value]="n.id" [selected]="targetDeRama(nodo, btn.id) === n.id">{{ etiquetaNodo(n.id) }}</option>
+              }
+            </select>
+          }
+          @if ((whatsappConfig(nodo).botones?.length ?? 0) < 3) {
+            <button class="btn btn--ghost btn--sm" (click)="agregarBotonDeNodo(nodo)">+ Agregar botón</button>
+          }
+        }
+
+        <!-- Lista -->
+        @if (whatsappConfig(nodo).tipo === 'lista') {
+          <p class="config-label">Descripción del menú</p>
+          <textarea class="panel-textarea" rows="3"
+            [defaultValue]="whatsappConfig(nodo).bodyTexto ?? ''"
+            (change)="actualizarCampoWp(nodo, 'bodyTexto', $any($event.target).value)"
+            placeholder="Selecciona una opción del menú...">
+          </textarea>
+          <p class="config-label">Opciones</p>
+          @for (sec of whatsappConfig(nodo).secciones ?? []; track $index; let si = $index) {
+            @for (opt of sec.opciones; track opt.id; let oi = $index) {
+              <div class="panel-branch-row">
+                <input type="text" class="nombre-nodo__input"
+                  [defaultValue]="opt.titulo"
+                  (change)="actualizarTituloOpcionDeNodo(nodo, si, oi, $any($event.target).value)"
+                  [placeholder]="'Opción ' + (oi + 1) + '...'" />
+                <button class="btn-delete btn-delete--sm" title="Eliminar" (click)="eliminarOpcionDeNodo(nodo, si, oi)">×</button>
+              </div>
+              <select class="nombre-nodo__input panel-branch-select"
+                (change)="asignarDestinoBranch(nodo, opt.id, $any($event.target).value)">
+                <option value="" [selected]="targetDeRama(nodo, opt.id) === ''">— sin conexión</option>
+                @for (n of nodosDisponibles(nodo.id); track n.id) {
+                  <option [value]="n.id" [selected]="targetDeRama(nodo, opt.id) === n.id">{{ etiquetaNodo(n.id) }}</option>
+                }
+              </select>
+            }
+          }
+          <button class="btn btn--ghost btn--sm" (click)="agregarOpcionDeNodo(nodo)">+ Agregar opción</button>
+        }
+
+        <!-- Template -->
+        @if (whatsappConfig(nodo).tipo === 'template') {
+          <p class="config-label">Nombre del template</p>
+          <input type="text" class="nombre-nodo__input"
+            [defaultValue]="whatsappConfig(nodo).templateNombre ?? ''"
+            (change)="actualizarCampoWp(nodo, 'templateNombre', $any($event.target).value)"
+            placeholder="Nombre exacto en Meta Business..." />
+          <p class="config-label">Parámetros <span class="config-hint-inline">(uno por línea)</span></p>
+          <textarea class="panel-textarea" rows="4"
+            [defaultValue]="(whatsappConfig(nodo).templateParams ?? []).join('\n')"
+            (change)="actualizarTemplateParams($any($event.target).value)"
+            placeholder="{{'{{'}}name{{'}}'}}&#10;{{'{{'}}plan{{'}}'}}">
+          </textarea>
+          <p class="config-hint">Cada línea corresponde a &#123;&#123;1&#125;&#125;, &#123;&#123;2&#125;&#125;…</p>
+        }
+
+        <!-- Media -->
+        @if (whatsappConfig(nodo).tipo === 'media') {
+          <p class="config-label">Tipo de archivo</p>
+          <div class="panel-media-tipos">
+            <button class="panel-media-btn" [class.panel-media-btn--activo]="whatsappConfig(nodo).mediaType === 'image'"    (click)="actualizarCampoWp(nodo, 'mediaType', 'image')">🖼 Imagen</button>
+            <button class="panel-media-btn" [class.panel-media-btn--activo]="whatsappConfig(nodo).mediaType === 'video'"    (click)="actualizarCampoWp(nodo, 'mediaType', 'video')">🎬 Video</button>
+            <button class="panel-media-btn" [class.panel-media-btn--activo]="whatsappConfig(nodo).mediaType === 'document'" (click)="actualizarCampoWp(nodo, 'mediaType', 'document')">📄 Documento</button>
+          </div>
+          <p class="config-label">URL del archivo</p>
+          <input type="text" class="nombre-nodo__input"
+            [defaultValue]="whatsappConfig(nodo).mediaUrl ?? ''"
+            (change)="actualizarCampoWp(nodo, 'mediaUrl', $any($event.target).value)"
+            placeholder="https://ejemplo.com/archivo.jpg" />
+          <p class="config-label">Caption / descripción</p>
+          <input type="text" class="nombre-nodo__input"
+            [defaultValue]="whatsappConfig(nodo).mediaCaption ?? ''"
+            (change)="actualizarCampoWp(nodo, 'mediaCaption', $any($event.target).value)"
+            placeholder="Descripción del archivo..." />
+        }
+
+        <!-- Condición -->
+        @if (whatsappConfig(nodo).tipo === 'condicion') {
+          <p class="config-label">Campo a evaluar</p>
+          <input type="text" class="nombre-nodo__input"
+            [defaultValue]="whatsappConfig(nodo).condicionCampo ?? ''"
+            (change)="actualizarCampoWp(nodo, 'condicionCampo', $any($event.target).value)"
+            placeholder="Ej. attributes.plan, country, status..." />
+          <p class="config-label">Operador</p>
+          <select class="nombre-nodo__input"
+            [value]="whatsappConfig(nodo).condicionOperador ?? 'eq'"
+            (change)="actualizarCampoWp(nodo, 'condicionOperador', $any($event.target).value)">
+            <option value="eq">= igual a</option>
+            <option value="ne">≠ distinto de</option>
+            <option value="contains">∋ contiene</option>
+            <option value="gt">&gt; mayor que</option>
+            <option value="lt">&lt; menor que</option>
+          </select>
+          <p class="config-label">Valor</p>
+          <input type="text" class="nombre-nodo__input"
+            [defaultValue]="whatsappConfig(nodo).condicionValor ?? ''"
+            (change)="actualizarCampoWp(nodo, 'condicionValor', $any($event.target).value)"
+            placeholder="Valor a comparar..." />
+          <p class="config-label">Si se cumple → nodo destino</p>
+          <select class="nombre-nodo__input panel-branch-select"
+            (change)="asignarDestinoBranch(nodo, 'si', $any($event.target).value)">
+            <option value="" [selected]="targetDeRama(nodo, 'si') === ''">— sin conexión</option>
+            @for (n of nodosDisponibles(nodo.id); track n.id) {
+              <option [value]="n.id" [selected]="targetDeRama(nodo, 'si') === n.id">{{ etiquetaNodo(n.id) }}</option>
+            }
+          </select>
+          <p class="config-label">Si NO se cumple → nodo destino</p>
+          <select class="nombre-nodo__input panel-branch-select"
+            (change)="asignarDestinoBranch(nodo, 'no', $any($event.target).value)">
+            <option value="" [selected]="targetDeRama(nodo, 'no') === ''">— sin conexión</option>
+            @for (n of nodosDisponibles(nodo.id); track n.id) {
+              <option [value]="n.id" [selected]="targetDeRama(nodo, 'no') === n.id">{{ etiquetaNodo(n.id) }}</option>
+            }
+          </select>
+        }
+
+        <!-- Ticket -->
+        @if (whatsappConfig(nodo).tipo === 'ticket') {
+          <p class="config-label">Tipo de ticket</p>
+          <div class="panel-ticket-tipos">
+            <button class="panel-ticket-btn" [class.panel-ticket-btn--activo]="whatsappConfig(nodo).ticketTipo === 'venta'"   (click)="actualizarCampoWp(nodo, 'ticketTipo', 'venta')">💰 Venta</button>
+            <button class="panel-ticket-btn" [class.panel-ticket-btn--activo]="whatsappConfig(nodo).ticketTipo === 'soporte'" (click)="actualizarCampoWp(nodo, 'ticketTipo', 'soporte')">🛠 Soporte</button>
+          </div>
+          <p class="config-label">Mensaje de cierre</p>
+          <textarea class="panel-textarea" rows="3"
+            [defaultValue]="whatsappConfig(nodo).mensajeFinal ?? ''"
+            (change)="actualizarCampoWp(nodo, 'mensajeFinal', $any($event.target).value)"
+            placeholder="Gracias por contactarnos...">
+          </textarea>
+          <div class="panel-info">
+            <p>🎫 Nodo terminal — crea un ticket y cierra el flujo de conversación.</p>
+          </div>
+        }
+      }
+    </div>
+  </aside>
+}
